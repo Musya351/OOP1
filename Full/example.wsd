@@ -1,1 +1,204 @@
-ggggshghgjf
+@startuml AutopilotCar_ActivityDiagram
+
+skinparam ActivityBackgroundColor #EAF2FF
+skinparam ActivityBorderColor #2E5B9A
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ArrowThickness 1.2
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #2E5B9A
+skinparam ActivityEndColor #2E5B9A
+skinparam PartitionBackgroundColor #FAFAFA
+skinparam PartitionBorderColor #AAAAAA
+
+title Activity Diagram – Sistem Mobil Autopilot Java
+
+|#EAF2FF| CarSimulator |
+start
+
+:main() dipanggil;
+:initializeCar();
+note right
+  Membuat objek:
+  Car, Engine, GearBox,
+  Body, Suspension,
+  Brake, Wheel, Tire
+end note
+:setupAutopilot();
+note right
+  Membuat objek:
+  AutopilotSystem,
+  ObjectDetector,
+  SpeedSensor
+end note
+:startSimulation();
+:ConsoleUI.run();
+
+|#FFF0F5| ConsoleUI |
+
+:displayMenu();
+note right
+  1. Jalankan Mobil
+  2. Aktifkan Autopilot
+  3. Lihat Status
+  4. Keluar
+end note
+
+repeat
+
+  :processInput() – baca input pengguna;
+
+  if (Pilihan pengguna?) then (Jalankan Mobil)
+
+    |#EAF2FF| Car |
+    :Car.enableAutopilot() / moveForward();
+    :Engine.start();
+    :Engine.accelerate();
+
+  else if (pilihan) then (Aktifkan Autopilot)
+
+    |#EAF2FF| Car |
+    :Car.enableAutopilot();
+    :autopilotEnabled = true;
+
+    |#F0EEFF| AutopilotSystem |
+    :AutopilotSystem.activate();
+    :mode = CRUISE_CONTROL;
+
+    repeat
+
+      :AutopilotSystem.update();
+
+      fork
+        |#F0EEFF| ObjectDetector |
+        :ObjectDetector.scan();
+        :Menghasilkan List<DetectedObject>;
+        :getNearestObject();
+        :getDistance();
+      fork again
+        |#F0EEFF| SpeedSensor |
+        :SpeedSensor.readData();
+        :getSpeed();
+        :isOverLimit();
+      end fork
+
+      |#F0EEFF| AutopilotSystem |
+
+      if (isObstacleAhead() ?) then (Ya)
+
+        :Ambil DetectedObject terdekat;
+
+        if (ObjectType ?) then (PEDESTRIAN)
+          :mode = EMERGENCY_STOP;
+          |#EAF2FF| Brake |
+          :Brake.emergencyBrake();
+          |#F0EEFF| AutopilotSystem |
+          :Car.stop();
+
+        else if (ObjectType) then (VEHICLE / OBSTACLE)
+
+          if (distance < minSafeDistance ?) then (Ya – sangat dekat)
+            :mode = EMERGENCY_STOP;
+            |#EAF2FF| Brake |
+            :Brake.emergencyBrake();
+            |#F0EEFF| AutopilotSystem |
+            :Car.stop();
+
+          else (Tidak – masih aman)
+            :mode = COLLISION_AVOIDANCE;
+            |#EAF2FF| Car |
+            :Car.turnRight() atau turnLeft();
+            |#EAF2FF| Brake |
+            :Brake.apply();
+
+          endif
+
+        else (TRAFFIC_SIGN / UNKNOWN)
+          :mode = COLLISION_AVOIDANCE;
+          |#EAF2FF| Brake |
+          :Brake.apply();
+
+        endif
+
+      else (Tidak ada obstacle)
+
+        :mode = CRUISE_CONTROL;
+
+        |#F0EEFF| AutopilotSystem |
+        :adjustGear();
+        :getOptimalGear() dari SpeedSensor;
+
+        if (currentGear < optimalGear ?) then (Ya – perlu naik gigi)
+          |#EAF2FF| GearBox |
+          :GearBox.autoShift(speed);
+          :shiftUp();
+
+        else if (currentGear > optimalGear ?) then (Ya – perlu turun gigi)
+          |#EAF2FF| GearBox |
+          :GearBox.autoShift(speed);
+          :shiftDown();
+
+        else (Gigi sudah optimal)
+          |#EAF2FF| Engine |
+          :Engine.accelerate();
+          :Pertahankan targetSpeed;
+
+        endif
+
+        if (isOverLimit() ?) then (Ya)
+          |#EAF2FF| Engine |
+          :Engine.brake();
+          |#EAF2FF| GearBox |
+          :GearBox.shiftDown();
+        else (Tidak)
+          :Lanjutkan cruise;
+        endif
+
+      endif
+
+      |#F0EEFF| AutopilotSystem |
+      :getStatusReport();
+
+      |#FFF0F5| ConsoleUI |
+      :displayStatus();
+      :displayAlert() jika ada peringatan;
+
+    repeat while (autopilotEnabled = true ?) is (Ya)
+    ->Tidak (Manual Override);
+
+    |#EAF2FF| Car |
+    :Car.disableAutopilot();
+    :mode = MANUAL_OVERRIDE;
+
+  else if (pilihan) then (Lihat Status)
+
+    |#EAF2FF| Car |
+    :Car.getStatus();
+
+    |#F0EEFF| AutopilotSystem |
+    :getStatusReport();
+
+    |#FFF0F5| ConsoleUI |
+    :displayStatus();
+
+  else (Keluar)
+
+    |#EAF2FF| Car |
+    :Car.stop();
+    |#EAF2FF| Engine |
+    :Engine.brake();
+
+  endif
+
+  |#FFF0F5| ConsoleUI |
+  :displayMenu();
+
+repeat while (Pilih Keluar ?) is (Tidak)
+->Ya;
+
+:Program selesai;
+
+stop
+
+@enduml
