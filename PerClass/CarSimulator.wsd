@@ -1,0 +1,63 @@
+@startuml AD_CarSimulator
+
+skinparam ActivityBackgroundColor #FFE4E8
+skinparam ActivityBorderColor #993556
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #993556
+skinparam ActivityEndColor #993556
+
+title Activity Diagram – CarSimulator
+
+start
+:Program dijalankan;
+:main(args : String[]) dipanggil;
+
+:initializeCar();
+note right
+  Membuat instance:
+  Car, Engine, Body,
+  GearBox, Suspension,
+  Brake, Wheel (x4), Tire (x4)
+end note
+
+if (Objek Car berhasil dibuat ?) then (Tidak)
+  :Tampilkan error inisialisasi;
+  stop
+else (Ya)
+endif
+
+:setupAutopilot();
+note right
+  Membuat instance:
+  AutopilotSystem,
+  ObjectDetector,
+  SpeedSensor
+  lalu hubungkan ke Car
+end note
+
+if (Autopilot berhasil disetup ?) then (Tidak)
+  :Tampilkan error setup;
+  stop
+else (Ya)
+endif
+
+:startSimulation();
+:Serahkan kontrol ke ConsoleUI.run();
+
+:Program berjalan...;
+
+:Tunggu hingga simulasi selesai;
+
+if (Simulasi selesai normal ?) then (Ya)
+  :Tampilkan pesan selesai;
+else (Tidak – error)
+  :Tampilkan pesan error;
+endif
+
+:Program dihentikan;
+stop
+
+@enduml

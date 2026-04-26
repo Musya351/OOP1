@@ -1,0 +1,60 @@
+@startuml AD_GearBox
+
+skinparam ActivityBackgroundColor #EAF2FF
+skinparam ActivityBorderColor #2E5B9A
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #2E5B9A
+skinparam ActivityEndColor #2E5B9A
+
+title Activity Diagram – GearBox
+
+start
+:GearBox diinstansiasi;
+:Set gearRatio[];
+:currentGear = 1;
+
+if (Perintah ?) then (shiftUp – manual)
+  if (currentGear = maxGear ?) then (Ya)
+    :Sudah gigi tertinggi, abaikan;
+  else (Tidak)
+    :currentGear++;
+    :Terapkan rasio gigi baru;
+  endif
+
+else if (Perintah) then (shiftDown – manual)
+  if (currentGear = 1 ?) then (Ya)
+    :Sudah gigi terendah, abaikan;
+  else (Tidak)
+    :currentGear--;
+    :Terapkan rasio gigi baru;
+  endif
+
+else (autoShift(speed) – otomatis)
+  :Terima nilai speed dari SpeedSensor;
+  :Hitung optimalGear berdasarkan speed;
+  note right
+    0–20   km/h → Gigi 1
+    20–40  km/h → Gigi 2
+    40–70  km/h → Gigi 3
+    70–100 km/h → Gigi 4
+    >100   km/h → Gigi 5
+  end note
+
+  if (optimalGear > currentGear ?) then (Ya)
+    :shiftUp();
+  else if (optimalGear < currentGear ?) then (Ya)
+    :shiftDown();
+  else (Sama)
+    :Tidak ada perubahan gigi;
+  endif
+
+endif
+
+:Update currentGear;
+:Return currentGear baru;
+stop
+
+@enduml

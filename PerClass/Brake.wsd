@@ -1,0 +1,50 @@
+@startuml AD_Brake
+
+skinparam ActivityBackgroundColor #EAF2FF
+skinparam ActivityBorderColor #2E5B9A
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #2E5B9A
+skinparam ActivityEndColor #2E5B9A
+
+title Activity Diagram – Brake
+
+start
+:Brake diinstansiasi;
+:Set type (Disc/Drum);
+:Set brakeForce (Newton);
+
+if (Perintah ?) then (apply – rem normal)
+  if (currentSpeed = 0 ?) then (Ya)
+    :Tidak perlu rem, abaikan;
+  else (Tidak)
+    :Terapkan brakeForce sebagian;
+    :currentSpeed menurun bertahap;
+    :Engine.brake() dipanggil bersamaan;
+  endif
+
+else (emergencyBrake – rem darurat)
+  if (currentSpeed = 0 ?) then (Ya)
+    :Tidak perlu rem, abaikan;
+  else (Tidak)
+    :Terapkan brakeForce MAKSIMUM;
+    :Semua roda direm serentak;
+    :Engine.brake() dipanggil;
+    :GearBox.shiftDown() bertahap;
+
+    repeat
+      :Periksa currentSpeed;
+    repeat while (currentSpeed > 0 ?) is (Ya)
+    ->Tidak;
+
+    :Kendaraan berhenti total;
+    :currentSpeed = 0;
+  endif
+
+endif
+
+stop
+
+@enduml

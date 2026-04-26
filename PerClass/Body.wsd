@@ -1,0 +1,36 @@
+@startuml AD_Body
+
+skinparam ActivityBackgroundColor #EAF2FF
+skinparam ActivityBorderColor #2E5B9A
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #2E5B9A
+skinparam ActivityEndColor #2E5B9A
+
+title Activity Diagram – Body
+
+start
+:Body diinstansiasi;
+:Set numberOfDoors;
+:Set color;
+:Set frameType\n(Sedan/SUV/Hatchback);
+
+if (numberOfDoors valid ?) then (Tidak)
+  :Throw Exception – pintu tidak valid;
+  stop
+else (Ya)
+endif
+
+if (frameType dikenali ?) then (Tidak)
+  :Set frameType = "Unknown";
+else (Ya)
+  :frameType valid;
+endif
+
+:Body siap – data fisik kendaraan tersimpan;
+:Data digunakan untuk getStatus() di Car;
+stop
+
+@enduml

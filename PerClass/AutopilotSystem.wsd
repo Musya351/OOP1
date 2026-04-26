@@ -1,0 +1,85 @@
+1. AutopilotSystem
+
+@startuml AD_AutopilotSystem
+
+skinparam ActivityBackgroundColor #F0EEFF
+skinparam ActivityBorderColor #534AB7
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #EAF2FF
+skinparam ActivityDiamondBorderColor #2E5B9A
+skinparam ActivityStartColor #534AB7
+skinparam ActivityEndColor #534AB7
+
+title Activity Diagram - AutopilotSystem
+
+start
+:AutopilotSystem diinstansiasi;
+:isActive = false;
+:Set targetSpeed;
+:Set minSafeDistance;
+:mode = MANUAL_OVERRIDE;
+
+:Terima perintah;
+
+if (Perintah = activate ?) then (Ya)
+  :isActive = true;
+  :mode = CRUISE_CONTROL;
+
+  repeat
+    :update() - satu siklus;
+
+    fork
+      :ObjectDetector.scan();
+      :isObstacleAhead();
+    fork again
+      :SpeedSensor.getSpeed();
+      :getOptimalGear();
+    end fork
+
+    if (isObstacleAhead() = true ?) then (Ya)
+      :handleObstacle();
+
+      if (distance < minSafeDistance ?) then (Ya)
+        :mode = EMERGENCY_STOP;
+        :Brake.emergencyBrake();
+        :Car.stop();
+      else (Tidak)
+        :mode = COLLISION_AVOIDANCE;
+        :Brake.apply();
+        :Car.turnRight() atau turnLeft();
+      endif
+
+    else (Tidak)
+      :mode = CRUISE_CONTROL;
+      :adjustGear();
+      :GearBox.autoShift(speed);
+
+      if (currentSpeed < targetSpeed ?) then (Ya)
+        :Engine.accelerate();
+      else if (currentSpeed > targetSpeed ?) then (Ya)
+        :Engine.brake();
+      else (Stabil)
+        :Pertahankan kecepatan;
+      endif
+
+    endif
+
+    :getStatusReport();
+
+  repeat while (isActive = true ?) is (Ya)
+  ->Tidak;
+
+else if (Perintah = deactivate ?) then (Ya)
+  :isActive = false;
+  :mode = MANUAL_OVERRIDE;
+
+else (getStatusReport)
+  :Kumpulkan data semua sensor;
+  :Return String laporan lengkap;
+
+endif
+
+stop
+
+@enduml

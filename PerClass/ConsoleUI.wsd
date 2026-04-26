@@ -1,0 +1,72 @@
+@startuml AD_ConsoleUI
+
+skinparam ActivityBackgroundColor #FFE4E8
+skinparam ActivityBorderColor #993556
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #993556
+skinparam ActivityEndColor #993556
+
+title Activity Diagram – ConsoleUI
+
+start
+:run() dipanggil;
+:Inisialisasi Scanner;
+
+repeat
+
+  :displayMenu();
+  note right
+    ================================
+     AUTOPILOT CAR SIMULATOR
+    ================================
+     1. Jalankan Mobil
+     2. Aktifkan Autopilot
+     3. Nonaktifkan Autopilot
+     4. Lihat Status Kendaraan
+     5. Keluar
+    ================================
+  end note
+
+  :processInput() – baca input user;
+
+  if (Input valid ?) then (Tidak)
+    :displayAlert("Input tidak valid!");
+  else (Ya)
+
+    if (Pilihan ?) then (1)
+      :Panggil Car.moveForward();
+      :displayStatus();
+
+    else if (Pilihan) then (2)
+      :Panggil Car.enableAutopilot();
+      :displayAlert("Autopilot aktif!");
+      :displayStatus();
+
+    else if (Pilihan) then (3)
+      :Panggil Car.disableAutopilot();
+      :displayAlert("Autopilot nonaktif!");
+      :displayStatus();
+
+    else if (Pilihan) then (4)
+      :Panggil Car.getStatus();
+      :Panggil AutopilotSystem.getStatusReport();
+      :displayStatus();
+
+    else (5 – Keluar)
+      :Panggil Car.stop();
+      :displayAlert("Simulasi selesai!");
+
+    endif
+
+  endif
+
+repeat while (Pilihan = Keluar ?) is (Tidak)
+->Ya;
+
+:Tutup Scanner;
+stop
+
+@enduml

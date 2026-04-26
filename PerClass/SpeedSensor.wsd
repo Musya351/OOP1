@@ -1,0 +1,58 @@
+3. SpeedSensor
+@startuml AD_SpeedSensor
+
+skinparam ActivityBackgroundColor #F0EEFF
+skinparam ActivityBorderColor #534AB7
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #EAF2FF
+skinparam ActivityDiamondBorderColor #2E5B9A
+skinparam ActivityStartColor #534AB7
+skinparam ActivityEndColor #534AB7
+
+title Activity Diagram - SpeedSensor
+
+start
+:SpeedSensor diinstansiasi;
+:Set maxSpeed (km/h);
+:speedHistory = [];
+
+:initialize();
+
+if (Sensor siap ?) then (Tidak)
+  :Throw Exception;
+  stop
+else (Ya)
+endif
+
+:isReady() = true;
+:readData() - baca rpm dari Wheel;
+:Hitung currentSpeed dari rpm + diameter;
+:Simpan ke speedHistory[];
+
+:getSpeed();
+:Return currentSpeed;
+
+if (isOverLimit() = true ?) then (Ya)
+  :currentSpeed melebihi maxSpeed;
+  :Kirim sinyal peringatan ke AutopilotSystem;
+  :AutopilotSystem panggil Engine.brake();
+else (Tidak)
+  :Kecepatan dalam batas aman;
+endif
+
+:getOptimalGear();
+note right
+  Mapping kecepatan ke gigi:
+  0 - 20 km/h  -> Gigi 1
+  20 - 40 km/h -> Gigi 2
+  40 - 70 km/h -> Gigi 3
+  70 - 100 km/h -> Gigi 4
+  > 100 km/h   -> Gigi 5
+end note
+:Return optimalGear (int);
+
+:Kirim data ke AutopilotSystem.adjustGear();
+stop
+
+@enduml

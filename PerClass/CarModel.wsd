@@ -1,0 +1,44 @@
+@startuml AD_CarModel
+
+skinparam ActivityBackgroundColor #EAF2FF
+skinparam ActivityBorderColor #2E5B9A
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #2E5B9A
+skinparam ActivityEndColor #2E5B9A
+
+title Activity Diagram – CarModel
+
+start
+:CarModel diinstansiasi;
+:Set title (nama model);
+:Set brand (merek);
+
+if (title kosong ?) then (Ya)
+  :Throw Exception – title wajib diisi;
+  stop
+else (Tidak)
+endif
+
+if (brand kosong ?) then (Ya)
+  :Throw Exception – brand wajib diisi;
+  stop
+else (Tidak)
+endif
+
+:CarModel valid dan siap digunakan;
+
+:Buat objek Car baru\nberbasis CarModel ini;
+
+if (Car berhasil dibuat ?) then (Ya)
+  :Tambahkan ke daftar Car (0..*);
+  :Return objek Car;
+else (Tidak)
+  :Tampilkan error pembuatan Car;
+endif
+
+stop
+
+@enduml

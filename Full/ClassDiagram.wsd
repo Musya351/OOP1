@@ -1,0 +1,210 @@
+@startuml AutopilotCar
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 50
+
+package "model" #EAF2FF {
+
+  class CarModel {
+    - title  : String
+    - brand  : String
+  }
+
+  class Car {
+    - registrationNum   : String
+    - year              : int
+    - licenseNumber     : String
+    - autopilotEnabled  : boolean
+    - currentSpeed      : float
+    --
+    + moveForward()
+    + moveBackward()
+    + stop()
+    + turnRight()
+    + turnLeft()
+    + enableAutopilot()
+    + disableAutopilot()
+    + getStatus() : String
+  }
+
+  class Engine {
+    - capacity       : float
+    - numCylinders   : int
+    --
+    + start()
+    + brake()
+    + accelerate()
+  }
+
+  class GearBox {
+    - gearRatio    : float[]
+    - currentGear  : int
+    --
+    + shiftUp()
+    + shiftDown()
+    + autoShift(speed : float)
+  }
+
+  class GearBoxType {
+    - name        : String
+    - remarks     : String
+    - isAutomatic : boolean
+  }
+
+  class Body {
+    - numberOfDoors : int
+    - color         : String
+    - frameType     : String
+  }
+
+  class Suspension {
+    - springRate    : float
+    - dampingCoeff  : float
+    - type          : String
+  }
+
+  class Brake {
+    - type       : String
+    - brakeForce : float
+    --
+    + apply()
+    + emergencyBrake()
+  }
+
+  class Wheel {
+    - diameter  : float
+    - position  : String
+    - rpm       : float
+  }
+
+  class Tire {
+    - width       : float
+    - airPressure : float
+    - treadDepth  : float
+  }
+}
+
+package "autopilot" #F0EEFF {
+
+  class AutopilotSystem {
+    - isActive          : boolean
+    - targetSpeed       : float
+    - minSafeDistance   : float
+    - mode              : AutopilotMode
+    --
+    + activate()
+    + deactivate()
+    + update()
+    + handleObstacle()
+    + adjustGear()
+    + getStatusReport() : String
+  }
+
+  interface Sensor {
+    + initialize()
+    + readData() : Object
+    + isReady()  : boolean
+  }
+
+  class ObjectDetector {
+    - detectionRange : float
+    - sensitivity    : float
+    --
+    + scan()             : List
+    + getNearestObject() : DetectedObject
+    + isObstacleAhead()  : boolean
+    + getDistance()      : float
+    + initialize()
+    + readData()         : Object
+    + isReady()          : boolean
+  }
+
+  class SpeedSensor {
+    - currentSpeed  : float
+    - maxSpeed      : float
+    - speedHistory  : float[]
+    --
+    + getSpeed()       : float
+    + isOverLimit()    : boolean
+    + getOptimalGear() : int
+    + initialize()
+    + readData()       : Object
+    + isReady()        : boolean
+  }
+
+  class DetectedObject {
+    - objectId      : String
+    - distance      : float
+    - relativeSpeed : float
+    - isThreat      : boolean
+  }
+
+  enum AutopilotMode {
+    CRUISE_CONTROL
+    COLLISION_AVOIDANCE
+    EMERGENCY_STOP
+    MANUAL_OVERRIDE
+    LANE_KEEPING
+  }
+
+  enum ObjectType {
+    VEHICLE
+    PEDESTRIAN
+    OBSTACLE
+    TRAFFIC_SIGN
+    UNKNOWN
+  }
+}
+
+package "ui" #FFF0F5 {
+
+  class ConsoleUI {
+    - scanner : Scanner
+    --
+    + displayMenu()
+    + displayStatus()
+    + processInput()
+    + displayAlert(msg : String)
+    + run()
+  }
+
+  class CarSimulator {
+    + {static} main(args : String[]) : void
+    + initializeCar()   : Car
+    + setupAutopilot()
+    + startSimulation()
+  }
+}
+
+' === RELASI MODEL ===
+CarModel "1" o-- "0..*" Car
+Car "1" *-- "1"    Engine
+Car "1" *-- "1"    GearBox
+Car "1" *-- "1"    Body
+Car "1" *-- "1..*" Suspension
+Car "1" *-- "1"    Brake
+Car "1" *-- "4"    Wheel
+GearBox    "1" o-- "0..*" GearBoxType
+Wheel      "1" *-- "1"    Tire
+Suspension      --> Wheel
+
+' === RELASI AUTOPILOT ===
+Car            "1" --> "1" AutopilotSystem
+AutopilotSystem "1" *-- "1" ObjectDetector
+AutopilotSystem "1" *-- "1" SpeedSensor
+AutopilotSystem     -->      AutopilotMode
+AutopilotSystem     -->      GearBox
+AutopilotSystem     -->      Brake
+ObjectDetector  ..|> Sensor
+SpeedSensor     ..|> Sensor
+ObjectDetector "1" --> "0..*" DetectedObject
+DetectedObject      -->       ObjectType
+
+' === RELASI UI ===
+ConsoleUI   --> Car
+CarSimulator --> ConsoleUI
+CarSimulator --> Car
+
+@enduml

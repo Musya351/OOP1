@@ -1,0 +1,60 @@
+2. ObjectDetector
+@startuml AD_ObjectDetector
+
+skinparam ActivityBackgroundColor #F0EEFF
+skinparam ActivityBorderColor #534AB7
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #EAF2FF
+skinparam ActivityDiamondBorderColor #2E5B9A
+skinparam ActivityStartColor #534AB7
+skinparam ActivityEndColor #534AB7
+
+title Activity Diagram - ObjectDetector
+
+start
+:ObjectDetector diinstansiasi;
+:Set detectionRange (meter);
+:Set sensitivity (0.0 - 1.0);
+
+:initialize();
+
+if (Sensor siap ?) then (Tidak)
+  :Throw Exception - sensor gagal init;
+  stop
+else (Ya)
+endif
+
+:isReady() = true;
+:readData() - ambil data mentah sensor;
+:scan() - pindai area dalam detectionRange;
+
+if (Ada objek terdeteksi ?) then (Tidak)
+  :List DetectedObject kosong;
+  :isObstacleAhead() = false;
+  :getDistance() = MAX_VALUE;
+else (Ya)
+  :Buat objek DetectedObject untuk setiap objek terdeteksi;
+  :Set objectId, type, distance, relativeSpeed, isThreat;
+
+  :getNearestObject();
+  :Urutkan berdasarkan distance terkecil;
+  :Return DetectedObject terdekat;
+
+  :getDistance();
+  :Return jarak objek terdekat;
+
+  if (distance < minSafeDistance ?) then (Ya)
+    :isThreat = true;
+    :isObstacleAhead() = true;
+  else (Tidak)
+    :isThreat = false;
+    :isObstacleAhead() = false;
+  endif
+
+endif
+
+:Kirim hasil ke AutopilotSystem;
+stop
+
+@enduml

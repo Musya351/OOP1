@@ -1,0 +1,126 @@
+@startuml 5_AlurMenuKonsol
+
+skinparam ActivityBackgroundColor #FFF0F5
+skinparam ActivityBorderColor #993556
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #993556
+skinparam ActivityEndColor #993556
+
+title Activity Diagram – Alur Menu Konsol (UI)
+
+|#EAF2FF| CarSimulator |
+start
+:main() – program dijalankan;
+:initializeCar();
+:setupAutopilot();
+:startSimulation();
+
+|#FFF0F5| ConsoleUI |
+:run() – mulai loop utama;
+
+repeat
+
+  :displayMenu();
+  note right
+    ================================
+     AUTOPILOT CAR SIMULATOR
+    ================================
+     1. Jalankan Mobil
+     2. Aktifkan Autopilot
+     3. Nonaktifkan Autopilot
+     4. Lihat Status Kendaraan
+     5. Isi Bahan Bakar
+     6. Keluar
+    ================================
+  end note
+
+  :processInput() – baca pilihan;
+
+  if (Input valid ?) then (Tidak)
+    :displayAlert("Input tidak valid!");
+
+  else (Ya)
+
+    if (Pilihan ?) then (1 – Jalankan Mobil)
+      |#EAF2FF| Car |
+      :moveForward();
+      :Engine.start();
+      :Engine.accelerate();
+      |#FFF0F5| ConsoleUI |
+      :displayStatus();
+
+    else if (Pilihan) then (2 – Aktifkan Autopilot)
+
+      |#EAF2FF| Car |
+      if (autopilotEnabled = true ?) then (Ya)
+        |#FFF0F5| ConsoleUI |
+        :displayAlert("Autopilot sudah aktif!");
+      else (Tidak)
+        :enableAutopilot();
+        |#EAF2FF| AutopilotSystem |
+        :activate();
+        :mode = CRUISE_CONTROL;
+        |#FFF0F5| ConsoleUI |
+        :displayAlert("Autopilot diaktifkan!");
+        :displayStatus();
+      endif
+
+    else if (Pilihan) then (3 – Nonaktifkan Autopilot)
+
+      |#EAF2FF| Car |
+      if (autopilotEnabled = false ?) then (Ya)
+        |#FFF0F5| ConsoleUI |
+        :displayAlert("Autopilot tidak aktif!");
+      else (Tidak)
+        :disableAutopilot();
+        |#EAF2FF| AutopilotSystem |
+        :deactivate();
+        :mode = MANUAL_OVERRIDE;
+        |#FFF0F5| ConsoleUI |
+        :displayAlert("Autopilot dinonaktifkan!");
+      endif
+
+    else if (Pilihan) then (4 – Lihat Status)
+
+      |#EAF2FF| Car |
+      :getStatus();
+      |#EAF2FF| AutopilotSystem |
+      :getStatusReport();
+      |#F0EEFF| SpeedSensor |
+      :getSpeed();
+      |#F0EEFF| ObjectDetector |
+      :getDistance();
+      |#FFF0F5| ConsoleUI |
+      :displayStatus();
+      note right
+        Menampilkan:
+        - Kecepatan saat ini
+        - Gigi aktif
+        - Mode autopilot
+        - Jarak objek terdekat
+        - Status rem & mesin
+      end note
+
+    else (6 – Keluar)
+
+      |#EAF2FF| Car |
+      :stop();
+      |#EAF2FF| Engine |
+      :brake();
+      |#FFF0F5| ConsoleUI |
+      :displayAlert("Simulasi selesai. Sampai jumpa!");
+
+    endif
+
+  endif
+
+repeat while (Pilihan = Keluar ?) is (Tidak)
+->Ya;
+
+:Program dihentikan;
+stop
+
+@enduml

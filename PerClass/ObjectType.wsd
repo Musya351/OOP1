@@ -1,0 +1,63 @@
+7. ObjectType (Enum)
+@startuml AD_ObjectType
+
+skinparam ActivityBackgroundColor #EAF3DE
+skinparam ActivityBorderColor #3B6D11
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #3B6D11
+skinparam ActivityEndColor #3B6D11
+
+title Activity Diagram - ObjectType (Enum)\nKlasifikasi & Respons Sistem
+
+start
+:ObjectDetector mendeteksi objek;
+:Klasifikasikan tipe objek;
+
+if (ObjectType ?) then (VEHICLE)
+  :Analisis relativeSpeed;
+  if (Mendekat dengan cepat ?) then (Ya)
+    :isThreat = true;
+    :mode = COLLISION_AVOIDANCE;
+    :Brake.apply();
+  else (Tidak)
+    :isThreat = false;
+    :Monitor terus;
+  endif
+
+else if (ObjectType ?) then (PEDESTRIAN)
+  :isThreat = true otomatis;
+  :Prioritas keselamatan TERTINGGI;
+  :mode = EMERGENCY_STOP;
+  :Brake.emergencyBrake();
+  :Car.stop();
+
+else if (ObjectType ?) then (OBSTACLE)
+  :Objek statis di jalan;
+  if (distance < minSafeDistance ?) then (Ya)
+    :mode = EMERGENCY_STOP;
+    :Brake.emergencyBrake();
+  else (Tidak)
+    :mode = COLLISION_AVOIDANCE;
+    :Cari jalur alternatif;
+  endif
+
+else if (ObjectType ?) then (TRAFFIC_SIGN)
+  :Baca tipe rambu;
+  :isThreat = false;
+  :Sesuaikan targetSpeed berdasarkan rambu;
+
+else (UNKNOWN)
+  :Tidak dikenali - asumsikan bahaya;
+  :isThreat = true;
+  :mode = COLLISION_AVOIDANCE;
+  :Brake.apply() sebagai precaution;
+
+endif
+
+:Kirim keputusan ke AutopilotSystem;
+stop
+
+@enduml

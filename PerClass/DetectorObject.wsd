@@ -1,0 +1,54 @@
+4. DetectedObject
+@startuml AD_DetectedObject
+
+skinparam ActivityBackgroundColor #F0EEFF
+skinparam ActivityBorderColor #534AB7
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #EAF2FF
+skinparam ActivityDiamondBorderColor #2E5B9A
+skinparam ActivityStartColor #534AB7
+skinparam ActivityEndColor #534AB7
+
+title Activity Diagram - DetectedObject
+
+start
+:DetectedObject diinstansiasi oleh ObjectDetector.scan();
+:Set objectId (unik);
+:Set type (dari enum ObjectType);
+:Set distance (meter);
+:Set relativeSpeed (km/h);
+
+if (type = PEDESTRIAN ?) then (Ya)
+  :isThreat = true otomatis;
+  :Prioritas tertinggi;
+
+else if (type = VEHICLE ?) then (Ya)
+  if (relativeSpeed > 0 ?) then (Ya - mendekat)
+    :isThreat = true;
+  else (Tidak - menjauh)
+    :isThreat = false;
+  endif
+
+else if (type = OBSTACLE ?) then (Ya)
+  if (distance < minSafeDistance ?) then (Ya)
+    :isThreat = true;
+  else (Tidak)
+    :isThreat = false;
+  endif
+
+else if (type = TRAFFIC_SIGN ?) then (Ya)
+  :isThreat = false;
+  :Catat untuk logika lain;
+
+else (UNKNOWN)
+  :isThreat = true;
+  :Asumsikan berbahaya;
+
+endif
+
+:DetectedObject siap dikirim ke AutopilotSystem;
+:AutopilotSystem evaluasi isThreat dan distance;
+stop
+
+@enduml

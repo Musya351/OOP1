@@ -1,0 +1,109 @@
+@startuml 4_EmergencyStop
+
+skinparam ActivityBackgroundColor #EAF2FF
+skinparam ActivityBorderColor #2E5B9A
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #2E5B9A
+skinparam ActivityEndColor #2E5B9A
+
+title Activity Diagram – Emergency Stop
+
+|#EAF2FF| AutopilotSystem |
+start
+:update() mendeteksi kondisi kritis;
+
+|#F0EEFF| ObjectDetector |
+:scan();
+:getNearestObject();
+:getDistance();
+
+|#EAF2FF| AutopilotSystem |
+:Evaluasi jarak dan tipe objek;
+
+if (distance < minSafeDistance ?) then (Tidak – aman)
+  :Tidak perlu emergency stop;
+  stop
+else (Ya – KRITIS)
+endif
+
+if (ObjectType ?) then (PEDESTRIAN)
+  :TINGKAT BAHAYA: SANGAT TINGGI;
+  :mode = EMERGENCY_STOP;
+
+else if (ObjectType) then (VEHICLE)
+  :TINGKAT BAHAYA: TINGGI;
+  :mode = EMERGENCY_STOP;
+
+else if (ObjectType) then (OBSTACLE)
+  :TINGKAT BAHAYA: TINGGI;
+  :mode = EMERGENCY_STOP;
+
+else (UNKNOWN)
+  :TINGKAT BAHAYA: SEDANG;
+  :mode = COLLISION_AVOIDANCE;
+  :apply() – rem bertahap;
+  stop
+
+endif
+
+|#FFF0F5| ConsoleUI |
+:displayAlert("⚠ EMERGENCY STOP ACTIVATED!");
+
+|#EAF2FF| AutopilotSystem |
+:handleObstacle();
+
+|#EAF2FF| Brake |
+:emergencyBrake();
+note right
+  Gaya pengereman
+  maksimum (brakeForce)
+  diterapkan ke semua roda
+end note
+
+|#EAF2FF| Engine |
+:brake() – potong tenaga mesin;
+
+|#EAF2FF| GearBox |
+:shiftDown() bertahap;
+note right
+  Turun gigi bertahap
+  untuk menghindari
+  roda terkunci (ABS)
+end note
+
+|#EAF2FF| Car |
+
+repeat
+  :Cek currentSpeed;
+  if (currentSpeed > 0 ?) then (Ya – masih bergerak)
+    :Lanjutkan pengereman;
+  else (Tidak – sudah berhenti)
+  endif
+repeat while (currentSpeed > 0 ?) is (Ya)
+->Tidak;
+
+:stop() – kendaraan berhenti total;
+:currentSpeed = 0;
+
+|#EAF2FF| AutopilotSystem |
+:mode = MANUAL_OVERRIDE;
+:isActive = false;
+
+|#FFF0F5| ConsoleUI |
+:displayAlert("Kendaraan berhenti. Ambil alih kendali.");
+:displayStatus();
+
+if (Pengguna aktifkan kembali autopilot ?) then (Ya)
+  |#EAF2FF| AutopilotSystem |
+  :activate();
+  :mode = CRUISE_CONTROL;
+else (Tidak)
+  :Tetap mode MANUAL_OVERRIDE;
+endif
+
+stop
+
+@enduml

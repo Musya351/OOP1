@@ -1,0 +1,50 @@
+@startuml AD_Engine
+
+skinparam ActivityBackgroundColor #EAF2FF
+skinparam ActivityBorderColor #2E5B9A
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #2E5B9A
+skinparam ActivityEndColor #2E5B9A
+
+title Activity Diagram – Engine
+
+start
+:Engine diinstansiasi;
+:Set capacity (CC);
+:Set numCylinders;
+
+if (Perintah ?) then (start)
+  if (Mesin sudah menyala ?) then (Ya)
+    :Abaikan – sudah hidup;
+  else (Tidak)
+    :Nyalakan mesin;
+    :Semua silinder aktif;
+    :Mesin dalam kondisi idle;
+  endif
+
+else if (Perintah) then (accelerate)
+  if (Mesin menyala ?) then (Tidak)
+    :Panggil start() dulu;
+  else (Ya)
+  endif
+  :Tambah tenaga ke roda;
+  :currentSpeed meningkat;
+  :Kirim sinyal ke GearBox\nuntuk autoShift;
+
+else (brake)
+  if (currentSpeed = 0 ?) then (Ya)
+    :Tidak ada aksi;
+  else (Tidak)
+    :Kurangi tenaga mesin;
+    :Engine braking aktif;
+    :currentSpeed menurun;
+  endif
+
+endif
+
+stop
+
+@enduml

@@ -1,0 +1,31 @@
+@startuml AD_GearBoxType
+
+skinparam ActivityBackgroundColor #EAF2FF
+skinparam ActivityBorderColor #2E5B9A
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #2E5B9A
+skinparam ActivityEndColor #2E5B9A
+
+title Activity Diagram – GearBoxType
+
+start
+:GearBoxType diinstansiasi;
+:Set name (misal "Automatic");
+:Set remarks (keterangan);
+:Set isAutomatic (true/false);
+
+if (isAutomatic = true ?) then (Ya)
+  :GearBox dikonfigurasi mode otomatis;
+  :autoShift() diizinkan dipanggil;
+else (Tidak – Manual)
+  :GearBox hanya bisa shiftUp/shiftDown manual;
+  :autoShift() dikunci / tidak digunakan;
+endif
+
+:GearBoxType siap digunakan oleh GearBox;
+stop
+
+@enduml

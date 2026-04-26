@@ -1,0 +1,91 @@
+@startuml 3_CruiseControl
+
+skinparam ActivityBackgroundColor #EAF2FF
+skinparam ActivityBorderColor #2E5B9A
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #2E5B9A
+skinparam ActivityEndColor #2E5B9A
+
+title Activity Diagram – Cruise Control
+
+|#FFF0F5| ConsoleUI |
+start
+:Pengguna pilih "Aktifkan Cruise Control";
+:Pengguna input targetSpeed;
+
+|#EAF2FF| Car |
+:enableAutopilot();
+:autopilotEnabled = true;
+
+|#EAF2FF| AutopilotSystem |
+:activate();
+:Set targetSpeed dari input pengguna;
+:mode = CRUISE_CONTROL;
+
+repeat
+
+  :update() – siklus berjalan;
+
+  fork
+    |#F0EEFF| SpeedSensor |
+    :getSpeed() – baca currentSpeed;
+  fork again
+    |#F0EEFF| ObjectDetector |
+    :isObstacleAhead();
+  end fork
+
+  |#EAF2FF| AutopilotSystem |
+
+  if (isObstacleAhead() = true ?) then (Ya)
+    :Hentikan cruise control sementara;
+    :handleObstacle();
+    note right
+      Lanjut ke alur
+      Collision Avoidance
+    end note
+
+  else (Tidak – jalur aman)
+
+    if (currentSpeed < targetSpeed ?) then (Ya – terlalu lambat)
+      |#EAF2FF| Engine |
+      :accelerate();
+      |#EAF2FF| GearBox |
+      :autoShift(speed);
+      :shiftUp() jika perlu;
+
+    else if (currentSpeed > targetSpeed ?) then (Ya – terlalu cepat)
+      |#EAF2FF| Engine |
+      :brake() – kurangi tenaga;
+      |#EAF2FF| GearBox |
+      :autoShift(speed);
+      :shiftDown() jika perlu;
+
+    else (currentSpeed = targetSpeed)
+      :Kecepatan stabil;
+      |#EAF2FF| Engine |
+      :Pertahankan tenaga;
+
+    endif
+
+  endif
+
+  |#EAF2FF| AutopilotSystem |
+  :getStatusReport();
+  |#FFF0F5| ConsoleUI |
+  :displayStatus();
+
+repeat while (autopilotEnabled = true ?) is (Ya)
+->Tidak;
+
+|#EAF2FF| Car |
+:disableAutopilot();
+:mode = MANUAL_OVERRIDE;
+|#FFF0F5| ConsoleUI |
+:displayAlert("Autopilot dinonaktifkan");
+
+stop
+
+@enduml

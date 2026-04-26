@@ -1,0 +1,50 @@
+@startuml AD_Wheel
+
+skinparam ActivityBackgroundColor #EAF2FF
+skinparam ActivityBorderColor #2E5B9A
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #2E5B9A
+skinparam ActivityEndColor #2E5B9A
+
+title Activity Diagram – Wheel
+
+start
+:Wheel diinstansiasi (4x per Car);
+:Set diameter (inci);
+:Set position (FL/FR/RL/RR);
+:rpm = 0;
+:Hubungkan Tire ke Wheel;
+
+if (Kendaraan bergerak ?) then (Ya)
+  :Hitung rpm dari currentSpeed\ndan diameter;
+  :rpm meningkat seiring kecepatan;
+  :Data rpm dikirim ke SpeedSensor;
+
+else (Tidak)
+  :rpm = 0;
+endif
+
+if (Perintah belok ?) then (turnRight)
+  if (Position = FL atau FR ?) then (Ya)
+    :Roda berputar ke kanan;
+  else (Tidak – roda belakang)
+    :Ikuti arah roda depan;
+  endif
+
+else if (Perintah) then (turnLeft)
+  if (Position = FL atau FR ?) then (Ya)
+    :Roda berputar ke kiri;
+  else (Tidak)
+    :Ikuti arah roda depan;
+  endif
+
+else (Lurus)
+  :Roda tetap lurus;
+endif
+
+stop
+
+@enduml

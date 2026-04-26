@@ -1,0 +1,76 @@
+@startuml AD_Car
+
+skinparam ActivityBackgroundColor #EAF2FF
+skinparam ActivityBorderColor #2E5B9A
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #2E5B9A
+skinparam ActivityEndColor #2E5B9A
+
+title Activity Diagram – Car
+
+start
+:Car diinstansiasi;
+:Set registrationNum, year,\nlicenseNumber;
+:autopilotEnabled = false;
+:currentSpeed = 0;
+
+:Hubungkan Engine, GearBox,\nBody, Suspension, Brake,\nWheel, Tire;
+
+if (Semua komponen terhubung ?) then (Tidak)
+  :Throw Exception – komponen tidak lengkap;
+  stop
+else (Ya)
+endif
+
+:Car siap digunakan;
+
+if (Perintah masuk ?) then (moveForward)
+  :Engine.accelerate();
+  :currentSpeed meningkat;
+  :GearBox.autoShift(currentSpeed);
+
+else if (Perintah) then (moveBackward)
+  :Engine.accelerate() – reverse;
+  :currentSpeed negatif (mundur);
+
+else if (Perintah) then (stop)
+  :Brake.apply();
+  :Engine.brake();
+  :currentSpeed = 0;
+
+else if (Perintah) then (turnRight)
+  :Belokkan roda kanan;
+  :Wheel FL & FR adjusted;
+
+else if (Perintah) then (turnLeft)
+  :Belokkan roda kiri;
+  :Wheel FL & FR adjusted;
+
+else if (Perintah) then (enableAutopilot)
+  if (autopilotEnabled = true ?) then (Ya)
+    :Sudah aktif, abaikan;
+  else (Tidak)
+    :autopilotEnabled = true;
+    :AutopilotSystem.activate();
+  endif
+
+else if (Perintah) then (disableAutopilot)
+  if (autopilotEnabled = false ?) then (Ya)
+    :Sudah nonaktif, abaikan;
+  else (Tidak)
+    :autopilotEnabled = false;
+    :AutopilotSystem.deactivate();
+  endif
+
+else (getStatus)
+  :Kumpulkan data semua komponen;
+  :Return String status lengkap;
+
+endif
+
+stop
+
+@enduml

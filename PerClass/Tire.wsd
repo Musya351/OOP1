@@ -1,0 +1,36 @@
+@startuml AD_Tire
+
+skinparam ActivityBackgroundColor #EAF2FF
+skinparam ActivityBorderColor #2E5B9A
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #2E5B9A
+skinparam ActivityEndColor #2E5B9A
+
+title Activity Diagram – Tire
+
+start
+:Tire diinstansiasi;
+:Set width (mm);
+:Set airPressure (PSI);
+:Set treadDepth (mm);
+
+if (airPressure dalam batas normal ?) then (Tidak)
+  :displayAlert("Tekanan ban tidak normal!");
+else (Ya)
+  :Ban dalam kondisi baik;
+endif
+
+if (treadDepth < batas minimum ?) then (Ya)
+  :displayAlert("Ban aus – segera ganti!");
+else (Tidak)
+  :Alur ban masih aman;
+endif
+
+:Data Tire tersedia untuk getStatus();
+:Pengaruhi jarak pengereman Brake;
+stop
+
+@enduml

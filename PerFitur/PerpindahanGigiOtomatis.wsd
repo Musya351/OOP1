@@ -1,0 +1,91 @@
+@startuml 2_PerpindahanGigiOtomatis
+
+skinparam ActivityBackgroundColor #EAF2FF
+skinparam ActivityBorderColor #2E5B9A
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #2E5B9A
+skinparam ActivityEndColor #2E5B9A
+
+title Activity Diagram – Perpindahan Gigi Otomatis
+
+|#EAF2FF| AutopilotSystem |
+start
+:adjustGear() dipanggil dari update();
+
+|#F0EEFF| SpeedSensor |
+:initialize() – cek sensor siap;
+
+if (isReady() ?) then (Tidak)
+  :Log error: SpeedSensor tidak siap;
+  stop
+else (Ya)
+endif
+
+:readData();
+:getSpeed() – baca kecepatan saat ini;
+:Simpan ke speedHistory[];
+
+|#EAF2FF| AutopilotSystem |
+:Terima nilai currentSpeed;
+
+if (isOverLimit() ?) then (Ya)
+  :Tandai: kecepatan melebihi batas;
+  |#EAF2FF| Engine |
+  :brake() – kurangi tenaga mesin;
+  |#EAF2FF| GearBox |
+  :shiftDown();
+  :currentGear--;
+  |#FFF0F5| ConsoleUI |
+  :displayAlert("Kecepatan melebihi batas!");
+  stop
+else (Tidak)
+endif
+
+|#F0EEFF| SpeedSensor |
+:getOptimalGear();
+note right
+  Contoh mapping:
+  0–20 km/h   → Gigi 1
+  20–40 km/h  → Gigi 2
+  40–70 km/h  → Gigi 3
+  70–100 km/h → Gigi 4
+  >100 km/h   → Gigi 5
+end note
+
+|#EAF2FF| AutopilotSystem |
+:Bandingkan optimalGear vs currentGear;
+
+if (currentGear < optimalGear ?) then (Ya – perlu naik gigi)
+  |#EAF2FF| GearBox |
+  :autoShift(speed);
+  :shiftUp();
+  :currentGear++;
+  |#FFF0F5| ConsoleUI |
+  :displayStatus() – tampilkan gigi baru;
+
+else if (currentGear > optimalGear ?) then (Ya – perlu turun gigi)
+  |#EAF2FF| GearBox |
+  :autoShift(speed);
+  :shiftDown();
+  :currentGear--;
+  |#FFF0F5| ConsoleUI |
+  :displayStatus() – tampilkan gigi baru;
+
+else (Gigi sudah optimal)
+  :Tidak ada perubahan gigi;
+  |#EAF2FF| Engine |
+  :accelerate() – pertahankan kecepatan;
+
+endif
+
+|#EAF2FF| AutopilotSystem |
+:getStatusReport();
+|#FFF0F5| ConsoleUI |
+:displayStatus();
+
+stop
+
+@enduml

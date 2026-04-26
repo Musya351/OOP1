@@ -1,0 +1,52 @@
+5. Sensor (Interface)
+@startuml AD_Sensor
+
+skinparam ActivityBackgroundColor #E1F5EE
+skinparam ActivityBorderColor #0F6E56
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #0F6E56
+skinparam ActivityEndColor #0F6E56
+
+title Activity Diagram - Sensor (Interface)\nimplementasi: ObjectDetector & SpeedSensor
+
+start
+:Sensor diinstansiasi (ObjectDetector atau SpeedSensor);
+
+:initialize();
+note right
+  Setup hardware atau simulasi sensor
+  Kalibrasi awal nilai
+end note
+
+if (Inisialisasi berhasil ?) then (Tidak)
+  :isReady() = false;
+  :Lempar exception ke AutopilotSystem;
+  stop
+else (Ya)
+  :isReady() = true;
+endif
+
+repeat
+  :readData();
+  note right
+    ObjectDetector -> scan area
+    SpeedSensor    -> baca rpm Wheel
+  end note
+
+  if (Data valid ?) then (Ya)
+    :Proses dan kirim ke AutopilotSystem;
+  else (Tidak)
+    :Log error data sensor;
+    :Kirim nilai default atau null;
+  endif
+
+repeat while (isReady() = true ?) is (Ya)
+->Tidak;
+
+:Sensor tidak aktif;
+stop
+
+@enduml

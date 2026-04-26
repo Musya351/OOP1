@@ -1,0 +1,54 @@
+6. AutopilotMode (Enum)
+@startuml AD_AutopilotMode
+
+skinparam ActivityBackgroundColor #EAF3DE
+skinparam ActivityBorderColor #3B6D11
+skinparam ActivityFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityDiamondBackgroundColor #F0EEFF
+skinparam ActivityDiamondBorderColor #534AB7
+skinparam ActivityStartColor #3B6D11
+skinparam ActivityEndColor #3B6D11
+
+title Activity Diagram - AutopilotMode (Enum)\nTransisi Antar Mode
+
+start
+:Autopilot diaktifkan;
+:mode = CRUISE_CONTROL;
+
+if (Kondisi sistem ?) then (Jalur bebas)
+  :mode = CRUISE_CONTROL;
+  :Pertahankan targetSpeed;
+  :autoShift() aktif;
+
+else if (Kondisi sistem ?) then (Objek terdeteksi jauh)
+  :mode = COLLISION_AVOIDANCE;
+  :Brake.apply();
+  :turnRight() atau turnLeft();
+
+else if (Kondisi sistem ?) then (Objek sangat dekat)
+  :mode = EMERGENCY_STOP;
+  :Brake.emergencyBrake();
+  :Car.stop();
+
+else if (Kondisi sistem ?) then (Pengguna override)
+  :mode = MANUAL_OVERRIDE;
+  :isActive = false;
+  :Kontrol diserahkan ke pengguna;
+
+else (Jalur menyempit)
+  :mode = LANE_KEEPING;
+  :Koreksi arah kendaraan;
+  :turnRight() atau turnLeft() kecil;
+
+endif
+
+if (Kondisi kembali normal ?) then (Ya)
+  :mode = CRUISE_CONTROL;
+else (Tidak)
+  :Tetap di mode saat ini;
+endif
+
+stop
+
+@enduml
