@@ -100,6 +100,7 @@ package "autopilot" #F0EEFF {
     + handleObstacle()
     + adjustGear()
     + getStatusReport() : String
+    + setCruiseSpeed(speed : float)
   }
 
   interface Sensor {
@@ -132,6 +133,7 @@ package "autopilot" #F0EEFF {
     + initialize()
     + readData()       : Object
     + isReady()        : boolean
+    + maintainSpeed(target : float) : boolean
   }
 
   class DetectedObject {

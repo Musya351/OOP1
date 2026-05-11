@@ -1,105 +1,76 @@
-@startuml 1_DeteksiObjek_CollisionAvoidance
+@startuml DeteksiObjekCollisionAvoidance
 
 skinparam ActivityBackgroundColor #EAF2FF
-skinparam ActivityBorderColor #2E5B9A
-skinparam ActivityFontSize 12
-skinparam ArrowColor #333333
-skinparam ActivityDiamondBackgroundColor #F0EEFF
-skinparam ActivityDiamondBorderColor #534AB7
-skinparam ActivityStartColor #2E5B9A
-skinparam ActivityEndColor #2E5B9A
+skinparam ActivityBorderColor #4A90D9
+skinparam ArrowColor #4A90D9
+skinparam ActivityDiamondBackgroundColor #FFF0F5
+skinparam ActivityDiamondBorderColor #D94A8C
 
-title Activity Diagram – Deteksi Objek & Collision Avoidance
-
-|#EAF2FF| AutopilotSystem |
 start
-:update() dipanggil setiap siklus;
 
-|#F0EEFF| ObjectDetector |
-:initialize() – cek sensor siap;
+:AutopilotSystem.update();
+:ObjectDetector.initialize();
 
-if (isReady() ?) then (Tidak)
-  :Log error: sensor tidak siap;
+if (ObjectDetector.isReady()?) then (tidak)
+  :displayAlert("Sensor tidak siap!");
   stop
-else (Ya)
 endif
 
-:scan() – pindai area depan;
-:Hasilkan List<DetectedObject>;
+repeat
 
-if (List kosong ?) then (Ya)
-  |#EAF2FF| AutopilotSystem |
-  :Tidak ada objek terdeteksi;
-  :Lanjutkan mode CRUISE_CONTROL;
-  stop
-else (Tidak)
-endif
+  :ObjectDetector.scan() → List<DetectedObject>;
 
-:getNearestObject();
-:getDistance() – ukur jarak objek terdekat;
+  if (List kosong?) then (ya)
+    :Tidak ada objek terdeteksi;
+    :Lanjut berkendara normal;
+  else (tidak)
+    :ObjectDetector.getNearestObject();
+    :ObjectDetector.getDistance() → distance;
 
-|#EAF2FF| AutopilotSystem |
-:Terima data DetectedObject;
-:isObstacleAhead() = true;
+    if (distance <= minSafeDistance?) then (ya)
 
-if (isThreat = true ?) then (Ya)
+      if (DetectedObject.isThreat == true?) then (ya)
 
-  if (ObjectType ?) then (PEDESTRIAN)
-    :Prioritas STOP – pejalan kaki;
-    :mode = EMERGENCY_STOP;
-    |#EAF2FF| Brake |
-    :emergencyBrake();
-    |#EAF2FF| Car |
-    :stop();
+        if (ObjectType == PEDESTRIAN?) then (ya)
+          :set mode = EMERGENCY_STOP;
+          :Brake.emergencyBrake();
+          :displayAlert("Pejalan kaki terdeteksi!");
+          stop
+        elseif (ObjectType == VEHICLE?) then (ya)
+          :set mode = COLLISION_AVOIDANCE;
+          :Brake.apply();
+          :Car.turnLeft() atau turnRight();
+          :displayAlert("Kendaraan di depan!");
+        elseif (ObjectType == OBSTACLE?) then (ya)
+          :set mode = COLLISION_AVOIDANCE;
+          :Brake.apply();
+          :Car.turnLeft() atau turnRight();
+          :displayAlert("Rintangan terdeteksi!");
+        elseif (ObjectType == TRAFFIC_SIGN?) then (ya)
+          :Baca rambu;
+          :Sesuaikan kecepatan;
+        else (UNKNOWN)
+          :set mode = EMERGENCY_STOP;
+          :Brake.emergencyBrake();
+          :displayAlert("Objek tidak dikenal!");
+          stop
+        endif
 
-  else if (ObjectType) then (VEHICLE)
-
-    if (distance < minSafeDistance ?) then (Ya)
-      :mode = EMERGENCY_STOP;
-      |#EAF2FF| Brake |
-      :emergencyBrake();
-      |#EAF2FF| Car |
-      :stop();
-
-    else (Tidak – jarak masih aman)
-      :mode = COLLISION_AVOIDANCE;
-      |#EAF2FF| Brake |
-      :apply() – rem bertahap;
-      |#EAF2FF| Car |
-      if (jalur kanan kosong ?) then (Ya)
-        :turnRight();
-      else (Tidak)
-        :turnLeft();
+      else (tidak)
+        :Objek tidak berbahaya;
+        :Lanjut berkendara;
       endif
 
+    else (distance > minSafeDistance)
+      :Jarak aman\nLanjut berkendara normal;
     endif
-
-  else if (ObjectType) then (OBSTACLE)
-    :mode = COLLISION_AVOIDANCE;
-    |#EAF2FF| Brake |
-    :apply();
-    |#EAF2FF| Car |
-    :turnRight() atau turnLeft();
-
-  else (TRAFFIC_SIGN / UNKNOWN)
-    :mode = COLLISION_AVOIDANCE;
-    |#EAF2FF| Brake |
-    :apply() – perlambat kendaraan;
 
   endif
 
-else (Tidak – bukan ancaman)
-  |#EAF2FF| AutopilotSystem |
-  :Monitor terus, tidak ada aksi;
-endif
+repeat while (AutopilotSystem.isActive?) is (ya)
+-> tidak;
 
-|#FFF0F5| ConsoleUI |
-:displayAlert() – tampilkan peringatan;
-:displayStatus() – update status layar;
-
-|#EAF2FF| AutopilotSystem |
-:getStatusReport();
-
+:Deteksi objek selesai;
 stop
 
 @enduml

@@ -1,107 +1,63 @@
-@startuml 4_EmergencyStop
+@startuml EmergencyStop
 
-skinparam ActivityBackgroundColor #EAF2FF
-skinparam ActivityBorderColor #2E5B9A
-skinparam ActivityFontSize 12
-skinparam ArrowColor #333333
-skinparam ActivityDiamondBackgroundColor #F0EEFF
-skinparam ActivityDiamondBorderColor #534AB7
-skinparam ActivityStartColor #2E5B9A
-skinparam ActivityEndColor #2E5B9A
+skinparam ActivityBackgroundColor #FFF0F0
+skinparam ActivityBorderColor #D94A4A
+skinparam ArrowColor #D94A4A
+skinparam ActivityDiamondBackgroundColor #FFF0F5
+skinparam ActivityDiamondBorderColor #D94A8C
 
-title Activity Diagram – Emergency Stop
-
-|#EAF2FF| AutopilotSystem |
 start
-:update() mendeteksi kondisi kritis;
 
-|#F0EEFF| ObjectDetector |
-:scan();
-:getNearestObject();
-:getDistance();
-
-|#EAF2FF| AutopilotSystem |
-:Evaluasi jarak dan tipe objek;
-
-if (distance < minSafeDistance ?) then (Tidak – aman)
-  :Tidak perlu emergency stop;
-  stop
-else (Ya – KRITIS)
+if (Pemicu Emergency Stop?) then
+  split
+    :ObjectDetector.isObstacleAhead()\ndistance <= minSafeDistance;
+  split again
+    :ObjectType == PEDESTRIAN\natau UNKNOWN;
+  split again
+    :User input manual\nMANUAL_OVERRIDE;
+  split again
+    :SpeedSensor.isOverLimit()\n== true;
+  end split
 endif
 
-if (ObjectType ?) then (PEDESTRIAN)
-  :TINGKAT BAHAYA: SANGAT TINGGI;
-  :mode = EMERGENCY_STOP;
+:set mode = EMERGENCY_STOP;
+:displayAlert("EMERGENCY STOP DIAKTIFKAN!");
 
-else if (ObjectType) then (VEHICLE)
-  :TINGKAT BAHAYA: TINGGI;
-  :mode = EMERGENCY_STOP;
+fork
+  :Brake.emergencyBrake();
+fork again
+  :Engine.brake();
+fork again
+  :GearBox.shiftDown() bertahap;
+end fork
 
-else if (ObjectType) then (OBSTACLE)
-  :TINGKAT BAHAYA: TINGGI;
-  :mode = EMERGENCY_STOP;
-
-else (UNKNOWN)
-  :TINGKAT BAHAYA: SEDANG;
-  :mode = COLLISION_AVOIDANCE;
-  :apply() – rem bertahap;
-  stop
-
-endif
-
-|#FFF0F5| ConsoleUI |
-:displayAlert("⚠ EMERGENCY STOP ACTIVATED!");
-
-|#EAF2FF| AutopilotSystem |
-:handleObstacle();
-
-|#EAF2FF| Brake |
-:emergencyBrake();
-note right
-  Gaya pengereman
-  maksimum (brakeForce)
-  diterapkan ke semua roda
-end note
-
-|#EAF2FF| Engine |
-:brake() – potong tenaga mesin;
-
-|#EAF2FF| GearBox |
-:shiftDown() bertahap;
-note right
-  Turun gigi bertahap
-  untuk menghindari
-  roda terkunci (ABS)
-end note
-
-|#EAF2FF| Car |
+:SpeedSensor.getSpeed() → currentSpeed;
 
 repeat
-  :Cek currentSpeed;
-  if (currentSpeed > 0 ?) then (Ya – masih bergerak)
-    :Lanjutkan pengereman;
-  else (Tidak – sudah berhenti)
+  :Monitor currentSpeed;
+  if (currentSpeed > 0?) then (ya)
+    :Brake.emergencyBrake() lanjut;
   endif
-repeat while (currentSpeed > 0 ?) is (Ya)
-->Tidak;
+repeat while (currentSpeed > 0?) is (ya)
+-> tidak;
 
-:stop() – kendaraan berhenti total;
+:Car.stop();
 :currentSpeed = 0;
 
-|#EAF2FF| AutopilotSystem |
-:mode = MANUAL_OVERRIDE;
-:isActive = false;
+:AutopilotSystem.deactivate();
+:set mode = MANUAL_OVERRIDE;
+:set isActive = false;
 
-|#FFF0F5| ConsoleUI |
-:displayAlert("Kendaraan berhenti. Ambil alih kendali.");
-:displayStatus();
+:displayAlert("Kendaraan berhenti total.\nSilakan periksa kondisi sekitar.");
 
-if (Pengguna aktifkan kembali autopilot ?) then (Ya)
-  |#EAF2FF| AutopilotSystem |
-  :activate();
-  :mode = CRUISE_CONTROL;
-else (Tidak)
-  :Tetap mode MANUAL_OVERRIDE;
+if (User konfirmasi lanjut?) then (ya)
+  :Car.enableAutopilot();
+  :AutopilotSystem.activate();
+  :set mode = CRUISE_CONTROL;
+  :Kembali ke operasi normal;
+else (tidak)
+  :Sistem tetap\ndalam MANUAL_OVERRIDE;
+  stop
 endif
 
 stop
