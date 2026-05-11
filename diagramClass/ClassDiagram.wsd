@@ -203,6 +203,7 @@ ObjectDetector  ..|> Sensor
 SpeedSensor     ..|> Sensor
 ObjectDetector "1" --> "0..*" DetectedObject
 DetectedObject      -->       ObjectType
+AutopilotSystem --> Engine
 
 ' === RELASI UI ===
 ConsoleUI   --> Car
