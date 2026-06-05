@@ -73,3 +73,40 @@
 - [MODIFIED] README.md -> menambahkan instruksi run dashboard GUI realtime dan daftar fitur GUI
 - [MODIFIED] diagramClass/ClassDiagram.wsd -> menambahkan DashboardGUI, GuiCarSimulator, relasi GUI, serta atribut/method lampu sen pada Car
 - [NOTE] Mode konsol tetap tersedia melalui CarSimulator, sedangkan GUI dijalankan melalui GuiCarSimulator
+## [PROMPT-12] - GUI State Button Menu
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> mengubah panel input GUI agar button yang tampil mengikuti state program: menu awal, menu mesin hidup, dan menu autopilot aktif
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> menu awal GUI hanya menampilkan Hidupkan Mesin, Isi Bensin, dan Keluar; tombol Keluar menyimpan bensin terakhir, menghentikan timer dashboard, menutup window, dan mematikan program
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> menu mesin hidup GUI menampilkan Matikan Mesin, Status Mobil, Tambah Kecepatan, Rem, Belok Kiri, Belok Kanan, Lurus, Mundur (Gigi R), dan Aktifkan Autopilot
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> menu autopilot aktif GUI menampilkan Set Cruise Control, Simulasi Deteksi Objek, Emergency Stop Manual, dan Nonaktifkan Autopilot
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> menambahkan dialog Status Mobil pada GUI yang menampilkan status Car dan AutopilotSystem
+- [MODIFIED] src/main/java/autopilotcar/model/Car.java -> menambahkan reverseMode dan getGearDisplay() agar dashboard dapat menampilkan gigi R saat mobil mundur
+- [MODIFIED] src/main/java/autopilotcar/model/Car.java -> menambahkan applyBrake() sebagai rem biasa yang mengurangi kecepatan bertahap dan mengembalikan gigi ke 0 saat mobil berhenti
+- [MODIFIED] diagramClass/ClassDiagram.wsd -> memperbarui atribut dan method Car untuk reverseMode, applyBrake(), dan getGearDisplay()
+- [NOTE] ConsoleUI tidak diubah sehingga mode konsol tetap memakai alur yang sudah ada
+## [PROMPT-13] - Autopilot Cruise and Controlled Detection
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> menambahkan default cruise speed 50 KM/Jam saat autopilot diaktifkan
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> memisahkan update cruise otomatis dari simulasi deteksi objek agar rintangan hanya discan saat fitur Simulasi Deteksi Objek dijalankan
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> menambahkan simulateObjectDetection() sebagai jalur eksplisit untuk scan objek dan obstacle handling
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> mengubah emergency stop sistem menjadi penurunan bertahap 5 KM/Jam per detik sampai berhenti
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> update cruise tanpa scan obstacle akan mengembalikan mode COLLISION_AVOIDANCE ke CRUISE_CONTROL agar autopilot kembali melaju normal setelah simulasi obstacle selesai
+- [MODIFIED] src/main/java/autopilotcar/ui/CarSimulator.java -> mengubah target speed awal AutopilotSystem dari 60 menjadi 50 KM/Jam
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> timer realtime GUI tetap memanggil update cruise biasa tanpa scan rintangan acak
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> saat Autopilot diaktifkan, GUI langsung menjalankan satu update cruise awal agar kecepatan mulai naik menuju 50 KM/Jam
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> tombol Simulasi Deteksi Objek memakai simulateObjectDetection() dan dijalankan pada thread terpisah agar dashboard tidak memicu obstacle otomatis setiap detik
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> Emergency Stop Manual memakai Swing Timer untuk mengurangi kecepatan 5 KM/Jam per detik sampai mobil berhenti
+- [MODIFIED] src/main/java/autopilotcar/ui/ConsoleUI.java -> menu Simulasi Deteksi Objek memakai simulateObjectDetection(), sedangkan Set Cruise Control tetap memakai update cruise biasa
+- [MODIFIED] src/main/java/autopilotcar/ui/ConsoleUI.java -> saat Autopilot diaktifkan dari console, sistem langsung menjalankan satu update cruise awal dan menyinkronkan speed mobil
+- [MODIFIED] src/main/java/autopilotcar/ui/ConsoleUI.java -> Emergency Stop Manual console mengurangi kecepatan 5 KM/Jam per detik sebelum berhenti total
+- [MODIFIED] src/main/java/autopilotcar/model/Car.java -> menambahkan overload applyBrake(float speedReduction) agar pengereman bertahap bisa dipakai oleh emergency stop manual
+- [NOTE] Perubahan ini menjawab log console yang menunjukkan collision avoidance dan emergency stop terlalu sering muncul akibat scan objek otomatis pada update realtime
+## [PROMPT-14] - Rare Normal Detection and Frequent Simulation
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> autopilot biasa kembali menjalankan deteksi objek otomatis, tetapi dengan peluang scan rendah agar rintangan jarang muncul
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> tombol/fitur Simulasi Deteksi Objek tetap memakai jalur scan khusus dengan frekuensi objek lebih tinggi
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> menambahkan Random dan NORMAL_DETECTION_CHANCE untuk membedakan frekuensi deteksi normal dan simulasi
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> obstacle non-urgent bertipe VEHICLE atau OBSTACLE tetap ditangani dengan collision avoidance, pengurangan kecepatan otomatis, dan log manuver menghindar
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> setelah obstacle terlewati, update cruise normal mengembalikan mode ke CRUISE_CONTROL sehingga kecepatan naik bertahap kembali ke target cruise
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> obstacle urgent seperti PEDESTRIAN atau UNKNOWN tetap mengeksekusi emergency stop bertahap
+- [MODIFIED] src/main/java/autopilotcar/autopilot/ObjectDetector.java -> menambahkan scanFrequent() dan readFrequentData() agar simulasi tombol lebih sering menghasilkan objek/rintangan
+- [MODIFIED] src/main/java/autopilotcar/autopilot/ObjectDetector.java -> scan frequent membuat 1 sampai 3 objek dengan jarak lebih dekat agar tombol Simulasi Deteksi Objek terasa lebih aktif daripada deteksi normal
+- [MODIFIED] diagramClass/ClassDiagram.wsd -> menambahkan method simulateObjectDetection(), scanFrequent(), dan readFrequentData() ke diagram class
+- [NOTE] Frekuensi deteksi normal dibuat jarang, sedangkan simulasi manual dibuat lebih sering; keduanya tetap memakai aturan urgent dan non-urgent yang sama

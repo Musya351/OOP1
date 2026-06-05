@@ -15,6 +15,7 @@ public class Car {
     private FuelTank fuelTank;
     private long lastFuelUpdateMillis;
     private String turnSignal;
+    private boolean reverseMode;
     private Engine engine;
     private GearBox gearBox;
     private Body body;
@@ -34,6 +35,7 @@ public class Car {
         this.fuelTank = fuelTank;
         this.lastFuelUpdateMillis = System.currentTimeMillis();
         this.turnSignal = "Mati";
+        this.reverseMode = false;
         this.engine = engine;
         this.gearBox = gearBox;
         this.body = body;
@@ -220,6 +222,7 @@ public class Car {
 
         engine.start();
         engine.accelerate();
+        reverseMode = false;
         currentSpeed += 10.0f;
         gearBox.autoShift(currentSpeed);
         System.out.println("Car is moving forward at speed: " + currentSpeed);
@@ -238,9 +241,34 @@ public class Car {
         }
 
         engine.start();
+        reverseMode = true;
         currentSpeed = 5.0f;
         gearBox.setCurrentGear(0);
         System.out.println("Car is moving backward at speed: " + currentSpeed);
+    }
+
+    public void applyBrake() {
+        applyBrake(10.0f);
+    }
+
+    public void applyBrake(float speedReduction) {
+        updateFuelUsage();
+        if (!poweredOn) {
+            System.out.println("Car must be turned on before braking.");
+            return;
+        }
+
+        brake.apply();
+        engine.brake();
+        currentSpeed = Math.max(0.0f, currentSpeed - speedReduction);
+        if (currentSpeed == 0.0f) {
+            reverseMode = false;
+            gearBox.setCurrentGear(0);
+            resetFuelTimer();
+        } else if (!reverseMode) {
+            gearBox.autoShift(currentSpeed);
+        }
+        System.out.println("Car braking. Current speed: " + currentSpeed);
     }
 
     public void stop() {
@@ -249,6 +277,7 @@ public class Car {
         engine.brake();
         currentSpeed = 0.0f;
         gearBox.setCurrentGear(0);
+        reverseMode = false;
         turnSignal = "Mati";
         resetFuelTimer();
         System.out.println("Car has stopped.");
@@ -271,6 +300,13 @@ public class Car {
 
     public String getTurnSignal() {
         return turnSignal;
+    }
+
+    public String getGearDisplay() {
+        if (reverseMode && currentSpeed > 0.0f) {
+            return "R";
+        }
+        return String.valueOf(gearBox.getCurrentGear());
     }
 
     public void enableAutopilot() {
@@ -305,6 +341,7 @@ public class Car {
                 ", currentSpeed=" + currentSpeed +
                 ", fuelTank=" + fuelTank +
                 ", turnSignal='" + turnSignal + '\'' +
+                ", gearDisplay='" + getGearDisplay() + '\'' +
                 ", engine=" + engine +
                 ", gearBox=" + gearBox +
                 ", body=" + body +
@@ -348,6 +385,7 @@ public class Car {
         currentSpeed = 0.0f;
         autopilotEnabled = false;
         gearBox.setCurrentGear(0);
+        reverseMode = false;
         resetFuelTimer();
         System.out.println("BBM habis. Mobil berhenti, tetapi mesin tetap hidup.");
     }

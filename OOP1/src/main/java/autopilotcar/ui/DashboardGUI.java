@@ -34,8 +34,11 @@ public class DashboardGUI extends JFrame {
     private final AutopilotSystem autopilot;
     private final Path fuelSavePath;
     private final Timer dashboardTimer;
+    private Timer emergencyStopTimer;
     private int autopilotElapsedMillis;
+    private String currentInputState;
 
+    private JPanel inputPanel;
     private JLabel gearValue;
     private JLabel speedValue;
     private JLabel modeValue;
@@ -50,6 +53,7 @@ public class DashboardGUI extends JFrame {
         this.autopilot = autopilot;
         this.fuelSavePath = Paths.get("fuel-level.txt");
         this.dashboardTimer = new Timer(DASHBOARD_REFRESH_MS, event -> refreshDashboard());
+        this.currentInputState = "";
 
         setTitle("AutopilotCar Realtime Dashboard");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -64,6 +68,10 @@ public class DashboardGUI extends JFrame {
             @Override
             public void windowClosing(WindowEvent event) {
                 saveFuel();
+                dashboardTimer.stop();
+                if (emergencyStopTimer != null) {
+                    emergencyStopTimer.stop();
+                }
             }
         });
 
@@ -100,24 +108,11 @@ public class DashboardGUI extends JFrame {
     }
 
     private JPanel buildInputPanel() {
-        JPanel panel = new JPanel(new GridLayout(0, 1, 8, 8));
-        panel.setPreferredSize(new Dimension(250, 0));
-        panel.setBorder(BorderFactory.createEmptyBorder(16, 16, 0, 8));
-
-        panel.add(createButton("Hidupkan Mesin", event -> handleTurnOn()));
-        panel.add(createButton("Matikan Mesin", event -> handleTurnOff()));
-        panel.add(createButton("Isi Bensin", event -> handleFillFuel()));
-        panel.add(createButton("Aktifkan Autopilot", event -> handleActivateAutopilot()));
-        panel.add(createButton("Set Cruise Control", event -> handleCruiseControl()));
-        panel.add(createButton("Simulasi Deteksi Objek", event -> handleObjectDetection()));
-        panel.add(createButton("Emergency Stop Manual", event -> handleEmergencyStop()));
-        panel.add(createButton("Nonaktifkan Autopilot", event -> handleDeactivateAutopilot()));
-        panel.add(createButton("Tambah Kecepatan", event -> handleMoveForward()));
-        panel.add(createButton("Belok Kiri", event -> handleTurnLeft()));
-        panel.add(createButton("Lurus", event -> handleDriveStraight()));
-        panel.add(createButton("Belok Kanan", event -> handleTurnRight()));
-
-        return panel;
+        inputPanel = new JPanel(new GridLayout(0, 1, 8, 8));
+        inputPanel.setPreferredSize(new Dimension(250, 0));
+        inputPanel.setBorder(BorderFactory.createEmptyBorder(16, 16, 0, 8));
+        updateInputButtons();
+        return inputPanel;
     }
 
     private JScrollPane buildLogPanel() {
@@ -175,14 +170,59 @@ public class DashboardGUI extends JFrame {
         }
 
         FuelTank fuelTank = car.getFuelTank();
-        gearValue.setText(String.valueOf(car.getGearBox().getCurrentGear()));
+        gearValue.setText(car.getGearDisplay());
         speedValue.setText(String.format("%.1f", car.getCurrentSpeed()));
         modeValue.setText(autopilot.getMode().name());
         turnSignalValue.setText(car.getTurnSignal());
         fuelValue.setText(String.format("%.1f L / %.0f%%", fuelTank.getCurrentLiters(), fuelTank.getFuelPercentage()));
         engineValue.setText(car.isPoweredOn() ? "Hidup" : "Mati");
         autopilotValue.setText(autopilot.isActive() ? "Hidup" : "Mati");
+        updateInputButtons();
         saveFuel();
+    }
+
+    private void updateInputButtons() {
+        String nextState = getInputState();
+        if (inputPanel == null || nextState.equals(currentInputState)) {
+            return;
+        }
+
+        currentInputState = nextState;
+        inputPanel.removeAll();
+
+        if ("AUTOPILOT".equals(nextState)) {
+            inputPanel.add(createButton("Set Cruise Control", event -> handleCruiseControl()));
+            inputPanel.add(createButton("Simulasi Deteksi Objek", event -> handleObjectDetection()));
+            inputPanel.add(createButton("Emergency Stop Manual", event -> handleEmergencyStop()));
+            inputPanel.add(createButton("Nonaktifkan Autopilot", event -> handleDeactivateAutopilot()));
+        } else if ("ENGINE_ON".equals(nextState)) {
+            inputPanel.add(createButton("Matikan Mesin", event -> handleTurnOff()));
+            inputPanel.add(createButton("Status Mobil", event -> handleStatus()));
+            inputPanel.add(createButton("Tambah Kecepatan", event -> handleMoveForward()));
+            inputPanel.add(createButton("Rem", event -> handleBrake()));
+            inputPanel.add(createButton("Belok Kiri", event -> handleTurnLeft()));
+            inputPanel.add(createButton("Belok Kanan", event -> handleTurnRight()));
+            inputPanel.add(createButton("Lurus", event -> handleDriveStraight()));
+            inputPanel.add(createButton("Mundur (Gigi R)", event -> handleMoveBackward()));
+            inputPanel.add(createButton("Aktifkan Autopilot", event -> handleActivateAutopilot()));
+        } else {
+            inputPanel.add(createButton("Hidupkan Mesin", event -> handleTurnOn()));
+            inputPanel.add(createButton("Isi Bensin", event -> handleFillFuel()));
+            inputPanel.add(createButton("Keluar", event -> handleExit()));
+        }
+
+        inputPanel.revalidate();
+        inputPanel.repaint();
+    }
+
+    private String getInputState() {
+        if (autopilot.isActive()) {
+            return "AUTOPILOT";
+        }
+        if (car.isPoweredOn()) {
+            return "ENGINE_ON";
+        }
+        return "INITIAL";
     }
 
     private void handleTurnOn() {
@@ -204,6 +244,13 @@ public class DashboardGUI extends JFrame {
         refreshDashboard();
     }
 
+    private void handleStatus() {
+        String status = car.getStatus() + System.lineSeparator() + autopilot.getStatusReport();
+        JOptionPane.showMessageDialog(this, status, "Status Mobil", JOptionPane.INFORMATION_MESSAGE);
+        appendLog("Status mobil ditampilkan.");
+        refreshDashboard();
+    }
+
     private void handleFillFuel() {
         car.fillFuel();
         appendLog("Bensin diisi penuh.");
@@ -222,6 +269,8 @@ public class DashboardGUI extends JFrame {
 
         car.enableAutopilot();
         autopilot.activate();
+        autopilot.update();
+        car.setCurrentSpeed(autopilot.getCurrentSpeed());
         appendLog("Autopilot aktif.");
         refreshDashboard();
     }
@@ -257,10 +306,15 @@ public class DashboardGUI extends JFrame {
             return;
         }
 
-        autopilot.update();
-        car.setCurrentSpeed(autopilot.getCurrentSpeed());
         appendLog("Simulasi deteksi objek dijalankan.");
-        refreshDashboard();
+        new Thread(() -> {
+            autopilot.simulateObjectDetection();
+            car.setCurrentSpeed(autopilot.getCurrentSpeed());
+            SwingUtilities.invokeLater(() -> {
+                appendLog("Simulasi deteksi objek selesai.");
+                refreshDashboard();
+            });
+        }).start();
     }
 
     private void handleEmergencyStop() {
@@ -268,12 +322,28 @@ public class DashboardGUI extends JFrame {
             appendLog("Mesin masih mati.");
             return;
         }
+        if (emergencyStopTimer != null && emergencyStopTimer.isRunning()) {
+            appendLog("Emergency stop sedang berjalan.");
+            return;
+        }
 
-        car.stop();
         car.disableAutopilot();
         autopilot.deactivate();
-        appendLog("Emergency stop manual dijalankan.");
-        refreshDashboard();
+        appendLog("Emergency stop manual dimulai. Kecepatan turun 5 KM/Jam per detik.");
+        emergencyStopTimer = new Timer(1000, event -> {
+            if (car.getCurrentSpeed() <= 0.0f) {
+                emergencyStopTimer.stop();
+                car.stop();
+                appendLog("Emergency stop selesai. Mobil berhenti.");
+                refreshDashboard();
+                return;
+            }
+
+            car.applyBrake(5.0f);
+            refreshDashboard();
+        });
+        emergencyStopTimer.setInitialDelay(0);
+        emergencyStopTimer.start();
     }
 
     private void handleDeactivateAutopilot() {
@@ -286,6 +356,18 @@ public class DashboardGUI extends JFrame {
     private void handleMoveForward() {
         car.moveForward();
         appendLog("Mobil maju / tambah kecepatan.");
+        refreshDashboard();
+    }
+
+    private void handleBrake() {
+        car.applyBrake();
+        appendLog("Rem digunakan. Kecepatan berkurang.");
+        refreshDashboard();
+    }
+
+    private void handleMoveBackward() {
+        car.moveBackward();
+        appendLog("Mobil mundur. Gigi R aktif.");
         refreshDashboard();
     }
 
@@ -314,6 +396,21 @@ public class DashboardGUI extends JFrame {
 
     private void saveFuel() {
         car.getFuelTank().save(fuelSavePath);
+    }
+
+    private void handleExit() {
+        appendLog("Program GUI ditutup.");
+        shutdownGui();
+    }
+
+    private void shutdownGui() {
+        saveFuel();
+        dashboardTimer.stop();
+        if (emergencyStopTimer != null) {
+            emergencyStopTimer.stop();
+        }
+        dispose();
+        System.exit(0);
     }
 
     public static void show(Car car, AutopilotSystem autopilot) {

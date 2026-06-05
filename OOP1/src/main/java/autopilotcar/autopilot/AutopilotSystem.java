@@ -6,9 +6,14 @@ import autopilotcar.model.GearBox;
 import autopilotcar.model.GearBoxType;
 
 import java.util.List;
+import java.util.Random;
 
 // Mengelola logika utama autopilot berdasarkan sensor dan aktuator kendaraan.
 public class AutopilotSystem {
+    private static final float DEFAULT_CRUISE_SPEED = 50.0f;
+    private static final float EMERGENCY_DECELERATION_STEP = 5.0f;
+    private static final float NORMAL_DETECTION_CHANCE = 0.08f;
+
     private boolean active;
     private float targetSpeed;
     private float minSafeDistance;
@@ -18,6 +23,7 @@ public class AutopilotSystem {
     private final GearBox gearBox;
     private final Brake brake;
     private final Engine engine;
+    private final Random random;
 
     public AutopilotSystem(float targetSpeed, float minSafeDistance, ObjectDetector objectDetector,
                            SpeedSensor speedSensor, GearBox gearBox, Brake brake, Engine engine) {
@@ -30,6 +36,7 @@ public class AutopilotSystem {
         this.gearBox = gearBox;
         this.brake = brake;
         this.engine = engine;
+        this.random = new Random();
     }
 
     public boolean isActive() {
@@ -62,6 +69,7 @@ public class AutopilotSystem {
 
     public void activate() {
         active = true;
+        targetSpeed = DEFAULT_CRUISE_SPEED;
         objectDetector.initialize();
         speedSensor.initialize();
         changeMode(AutopilotMode.CRUISE_CONTROL);
@@ -75,29 +83,45 @@ public class AutopilotSystem {
     }
 
     public void update() {
+        update(shouldRunNormalDetection(), false);
+    }
+
+    public void simulateObjectDetection() {
+        update(true, true);
+    }
+
+    private void update(boolean scanForObstacles, boolean frequentScan) {
         if (!active) {
             System.out.println("Autopilot is inactive. Update skipped.");
             return;
         }
 
         float currentSpeed = (Float) speedSensor.readData();
-        objectDetector.readData();
+        if (scanForObstacles) {
+            if (frequentScan) {
+                objectDetector.readFrequentData();
+            } else {
+                objectDetector.readData();
+            }
+        }
 
         if (speedSensor.isOverLimit()) {
             changeMode(AutopilotMode.EMERGENCY_STOP);
             System.out.println("Speed exceeds maximum limit. Triggering emergency response.");
-            brake.emergencyBrake();
-            engine.brake();
-            speedSensor.setCurrentSpeed(0.0f);
+            gradualEmergencyStop();
             deactivate();
             return;
+        }
+
+        if (!scanForObstacles && mode == AutopilotMode.COLLISION_AVOIDANCE) {
+            changeMode(AutopilotMode.CRUISE_CONTROL);
         }
 
         if (mode == AutopilotMode.CRUISE_CONTROL) {
             applyCruiseControl(currentSpeed);
         }
 
-        if (objectDetector.isObstacleAhead()) {
+        if (scanForObstacles && objectDetector.isObstacleAhead()) {
             DetectedObject nearestObject = objectDetector.getNearestObject();
             if (nearestObject != null && nearestObject.getDistance() <= minSafeDistance) {
                 handleObstacle();
@@ -105,7 +129,7 @@ public class AutopilotSystem {
             }
         }
 
-        adjustGear();
+        adjustGear(scanForObstacles);
     }
 
     public void handleObstacle() {
@@ -126,12 +150,10 @@ public class AutopilotSystem {
             case PEDESTRIAN:
             case UNKNOWN:
                 changeMode(AutopilotMode.EMERGENCY_STOP);
-                brake.emergencyBrake();
-                engine.brake();
+                gradualEmergencyStop();
                 while (gearBox.getCurrentGear() > 1) {
                     gearBox.shiftDown();
                 }
-                speedSensor.setCurrentSpeed(0.0f);
                 System.out.println("Emergency stop triggered for object type: " + objectType);
                 deactivate();
                 break;
@@ -145,7 +167,7 @@ public class AutopilotSystem {
                 } else {
                     speedSensor.setCurrentSpeed(0.0f);
                 }
-                System.out.println("Collision avoidance maneuver executed for: " + objectType);
+                System.out.println("Collision avoidance maneuver executed for: " + objectType + ". Reducing speed and steering around obstacle.");
                 break;
             case TRAFFIC_SIGN:
                 changeMode(AutopilotMode.CRUISE_CONTROL);
@@ -164,6 +186,10 @@ public class AutopilotSystem {
     }
 
     public void adjustGear() {
+        adjustGear(true);
+    }
+
+    private void adjustGear(boolean checkObstacleBeforeShiftUp) {
         if (!isAutomaticTransmission()) {
             System.out.println("Transmisi manual tidak bisa auto-shift.");
             return;
@@ -178,7 +204,7 @@ public class AutopilotSystem {
         }
 
         while (gearBox.getCurrentGear() < optimalGear) {
-            if (objectDetector.isObstacleAhead()) {
+            if (checkObstacleBeforeShiftUp && objectDetector.isObstacleAhead()) {
                 changeMode(AutopilotMode.COLLISION_AVOIDANCE);
                 System.out.println("Shift up dibatalkan karena ada obstacle di depan.");
                 return;
@@ -232,6 +258,24 @@ public class AutopilotSystem {
         }
     }
 
+    private void gradualEmergencyStop() {
+        while (speedSensor.getCurrentSpeed() > 0.0f) {
+            brake.emergencyBrake();
+            engine.brake();
+            speedSensor.setCurrentSpeed(Math.max(0.0f, speedSensor.getCurrentSpeed() - EMERGENCY_DECELERATION_STEP));
+            System.out.println("Emergency stop reducing speed to: " + speedSensor.getCurrentSpeed());
+            if (speedSensor.getCurrentSpeed() > 0.0f) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    speedSensor.setCurrentSpeed(0.0f);
+                    break;
+                }
+            }
+        }
+    }
+
     private boolean isAutomaticTransmission() {
         List<GearBoxType> gearBoxTypes = gearBox.getGearBoxTypes();
         for (GearBoxType gearBoxType : gearBoxTypes) {
@@ -240,6 +284,10 @@ public class AutopilotSystem {
             }
         }
         return false;
+    }
+
+    private boolean shouldRunNormalDetection() {
+        return random.nextFloat() < NORMAL_DETECTION_CHANCE;
     }
 
     private void changeMode(AutopilotMode newMode) {

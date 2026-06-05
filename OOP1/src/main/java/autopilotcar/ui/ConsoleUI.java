@@ -208,7 +208,7 @@ public class ConsoleUI {
             autopilot.activate();
         }
 
-        autopilot.update();
+        autopilot.simulateObjectDetection();
         car.setCurrentSpeed(autopilot.getCurrentSpeed());
         updateCarFuelState();
         saveFuel();
@@ -222,9 +222,18 @@ public class ConsoleUI {
             return;
         }
 
-        car.stop();
         car.disableAutopilot();
         autopilot.deactivate();
+        while (car.getCurrentSpeed() > 0.0f) {
+            car.applyBrake(5.0f);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        car.stop();
         saveFuel();
         displayAlert("Emergency stop manual dijalankan.");
     }
@@ -270,6 +279,9 @@ public class ConsoleUI {
 
         car.enableAutopilot();
         autopilot.activate();
+        autopilot.update();
+        car.setCurrentSpeed(autopilot.getCurrentSpeed());
+        saveFuel();
         displayAlert("Autopilot aktif.");
     }
 

@@ -21,11 +21,13 @@ package "model" #EAF2FF {
     - currentSpeed      : float
     - fuelTank          : FuelTank
     - turnSignal        : String
+    - reverseMode       : boolean
     --
     + turnOn() : boolean
     + turnOff() : boolean
     + fillFuel()
     + updateFuelUsage() : boolean
+    + applyBrake()
     + moveForward()
     + moveBackward()
     + stop()
@@ -33,6 +35,7 @@ package "model" #EAF2FF {
     + turnLeft()
     + driveStraight()
     + getTurnSignal() : String
+    + getGearDisplay() : String
     + enableAutopilot()
     + disableAutopilot()
     + getStatus() : String
@@ -118,6 +121,7 @@ package "autopilot" #F0EEFF {
     + activate()
     + deactivate()
     + update()
+    + simulateObjectDetection()
     + handleObstacle()
     + adjustGear()
     + getStatusReport() : String
@@ -135,11 +139,13 @@ package "autopilot" #F0EEFF {
     - sensitivity    : float
     --
     + scan()             : List
+    + scanFrequent()     : List
     + getNearestObject() : DetectedObject
     + isObstacleAhead()  : boolean
     + getDistance()      : float
     + initialize()
     + readData()         : Object
+    + readFrequentData() : Object
     + isReady()          : boolean
   }
 

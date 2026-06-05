@@ -67,6 +67,26 @@ public class ObjectDetector implements Sensor {
         }
     }
 
+    public void scanFrequent() {
+        detectedObjects.clear();
+        int totalObjects = 1 + random.nextInt(3);
+
+        for (int i = 0; i < totalObjects; i++) {
+            float distance = 1.0f + random.nextFloat() * (detectionRange * 0.5f);
+            float relativeSpeed = -20.0f + random.nextFloat() * 40.0f;
+            ObjectType objectType = DETECTABLE_TYPES[random.nextInt(DETECTABLE_TYPES.length)];
+            boolean threat = distance <= (detectionRange * sensitivity * 0.6f);
+
+            detectedObjects.add(new DetectedObject(
+                    "SIM-OBJ-" + (i + 1),
+                    distance,
+                    relativeSpeed,
+                    threat,
+                    objectType
+            ));
+        }
+    }
+
     public DetectedObject getNearestObject() {
         if (detectedObjects.isEmpty()) {
             return null;
@@ -103,6 +123,14 @@ public class ObjectDetector implements Sensor {
             initialize();
         }
         scan();
+        return getDetectedObjects();
+    }
+
+    public Object readFrequentData() {
+        if (!ready) {
+            initialize();
+        }
+        scanFrequent();
         return getDetectedObjects();
     }
 

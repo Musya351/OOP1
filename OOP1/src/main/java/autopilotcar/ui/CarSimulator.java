@@ -74,7 +74,7 @@ public class CarSimulator {
         SpeedSensor speedSensor = new SpeedSensor(car.getCurrentSpeed(), 120.0f);
 
         autopilot = new AutopilotSystem(
-                60.0f,
+                50.0f,
                 15.0f,
                 objectDetector,
                 speedSensor,
