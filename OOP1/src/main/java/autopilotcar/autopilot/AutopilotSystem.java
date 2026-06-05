@@ -1,6 +1,7 @@
 package autopilotcar.autopilot;
 
 import autopilotcar.model.Brake;
+import autopilotcar.model.Car;
 import autopilotcar.model.Engine;
 import autopilotcar.model.GearBox;
 import autopilotcar.model.GearBoxType;
@@ -13,6 +14,8 @@ public class AutopilotSystem {
     private static final float DEFAULT_CRUISE_SPEED = 50.0f;
     private static final float EMERGENCY_DECELERATION_STEP = 5.0f;
     private static final float NORMAL_DETECTION_CHANCE = 0.08f;
+    private static final int SIMULATION_MIN_DURATION_MS = 5000;
+    private static final int SIMULATION_MAX_EXTRA_DURATION_MS = 5000;
 
     private boolean active;
     private float targetSpeed;
@@ -23,10 +26,16 @@ public class AutopilotSystem {
     private final GearBox gearBox;
     private final Brake brake;
     private final Engine engine;
+    private final Car car;
     private final Random random;
 
     public AutopilotSystem(float targetSpeed, float minSafeDistance, ObjectDetector objectDetector,
                            SpeedSensor speedSensor, GearBox gearBox, Brake brake, Engine engine) {
+        this(targetSpeed, minSafeDistance, objectDetector, speedSensor, gearBox, brake, engine, null);
+    }
+
+    public AutopilotSystem(float targetSpeed, float minSafeDistance, ObjectDetector objectDetector,
+                           SpeedSensor speedSensor, GearBox gearBox, Brake brake, Engine engine, Car car) {
         this.active = false;
         this.targetSpeed = targetSpeed;
         this.minSafeDistance = minSafeDistance;
@@ -36,6 +45,7 @@ public class AutopilotSystem {
         this.gearBox = gearBox;
         this.brake = brake;
         this.engine = engine;
+        this.car = car;
         this.random = new Random();
     }
 
@@ -70,6 +80,9 @@ public class AutopilotSystem {
     public void activate() {
         active = true;
         targetSpeed = DEFAULT_CRUISE_SPEED;
+        if (car != null) {
+            speedSensor.setCurrentSpeed(car.getCurrentSpeed());
+        }
         objectDetector.initialize();
         speedSensor.initialize();
         changeMode(AutopilotMode.CRUISE_CONTROL);
@@ -78,6 +91,7 @@ public class AutopilotSystem {
 
     public void deactivate() {
         active = false;
+        clearTurnSignal();
         changeMode(AutopilotMode.MANUAL_OVERRIDE);
         System.out.println("Autopilot system deactivated.");
     }
@@ -87,7 +101,23 @@ public class AutopilotSystem {
     }
 
     public void simulateObjectDetection() {
-        update(true, true);
+        int durationMillis = SIMULATION_MIN_DURATION_MS + random.nextInt(SIMULATION_MAX_EXTRA_DURATION_MS + 1);
+        long endTime = System.currentTimeMillis() + durationMillis;
+
+        while (active && System.currentTimeMillis() < endTime) {
+            update(true, true);
+            if (!active || mode == AutopilotMode.EMERGENCY_STOP) {
+                return;
+            }
+
+            sleepOneSecond();
+        }
+
+        if (active) {
+            clearTurnSignal();
+            changeMode(AutopilotMode.CRUISE_CONTROL);
+            System.out.println("Simulation detection finished. Returning to cruise control.");
+        }
     }
 
     private void update(boolean scanForObstacles, boolean frequentScan) {
@@ -114,6 +144,7 @@ public class AutopilotSystem {
         }
 
         if (!scanForObstacles && mode == AutopilotMode.COLLISION_AVOIDANCE) {
+            clearTurnSignal();
             changeMode(AutopilotMode.CRUISE_CONTROL);
         }
 
@@ -127,6 +158,11 @@ public class AutopilotSystem {
                 handleObstacle();
                 return;
             }
+        }
+
+        if (scanForObstacles && mode == AutopilotMode.COLLISION_AVOIDANCE) {
+            clearTurnSignal();
+            changeMode(AutopilotMode.CRUISE_CONTROL);
         }
 
         adjustGear(scanForObstacles);
@@ -160,6 +196,7 @@ public class AutopilotSystem {
             case VEHICLE:
             case OBSTACLE:
                 changeMode(AutopilotMode.COLLISION_AVOIDANCE);
+                activateAvoidanceTurnSignal();
                 brake.apply();
                 engine.brake();
                 if (speedSensor.getCurrentSpeed() > 10.0f) {
@@ -171,13 +208,12 @@ public class AutopilotSystem {
                 break;
             case TRAFFIC_SIGN:
                 changeMode(AutopilotMode.CRUISE_CONTROL);
-                float adjustedSpeed = Math.max(0.0f, targetSpeed - 10.0f);
-                setCruiseSpeed(adjustedSpeed);
-                if (speedSensor.getCurrentSpeed() > adjustedSpeed) {
+                float temporarySpeed = Math.max(0.0f, speedSensor.getCurrentSpeed() - 5.0f);
+                if (speedSensor.getCurrentSpeed() > temporarySpeed) {
                     brake.apply();
-                    speedSensor.setCurrentSpeed(adjustedSpeed);
+                    speedSensor.setCurrentSpeed(temporarySpeed);
                 }
-                System.out.println("Traffic sign detected. Adjusting target speed to: " + adjustedSpeed);
+                System.out.println("Traffic sign detected. Slowing temporarily without changing cruise target: " + targetSpeed);
                 break;
             default:
                 System.out.println("Unhandled object type: " + objectType);
@@ -288,6 +324,32 @@ public class AutopilotSystem {
 
     private boolean shouldRunNormalDetection() {
         return random.nextFloat() < NORMAL_DETECTION_CHANCE;
+    }
+
+    private void activateAvoidanceTurnSignal() {
+        if (car == null) {
+            return;
+        }
+
+        if (random.nextBoolean()) {
+            car.turnLeft();
+        } else {
+            car.turnRight();
+        }
+    }
+
+    private void clearTurnSignal() {
+        if (car != null) {
+            car.driveStraight();
+        }
+    }
+
+    private void sleepOneSecond() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private void changeMode(AutopilotMode newMode) {

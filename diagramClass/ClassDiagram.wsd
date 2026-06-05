@@ -117,6 +117,7 @@ package "autopilot" #F0EEFF {
     - targetSpeed       : float
     - minSafeDistance   : float
     - mode              : AutopilotMode
+    - car               : Car
     --
     + activate()
     + deactivate()

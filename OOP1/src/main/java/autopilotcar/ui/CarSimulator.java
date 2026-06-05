@@ -80,7 +80,8 @@ public class CarSimulator {
                 speedSensor,
                 car.getGearBox(),
                 car.getBrake(),
-                car.getEngine()
+                car.getEngine(),
+                car
         );
 
         return autopilot;

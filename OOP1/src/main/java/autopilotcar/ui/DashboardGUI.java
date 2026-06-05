@@ -245,10 +245,69 @@ public class DashboardGUI extends JFrame {
     }
 
     private void handleStatus() {
-        String status = car.getStatus() + System.lineSeparator() + autopilot.getStatusReport();
-        JOptionPane.showMessageDialog(this, status, "Status Mobil", JOptionPane.INFORMATION_MESSAGE);
+        JTextArea statusArea = new JTextArea(buildStatusReport());
+        statusArea.setEditable(false);
+        statusArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
+        statusArea.setBackground(new Color(248, 250, 252));
+        statusArea.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+
+        JScrollPane scrollPane = new JScrollPane(statusArea);
+        scrollPane.setPreferredSize(new Dimension(560, 430));
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(205, 210, 218)));
+
+        JOptionPane.showMessageDialog(this, scrollPane, "Status Mobil", JOptionPane.INFORMATION_MESSAGE);
         appendLog("Status mobil ditampilkan.");
         refreshDashboard();
+    }
+
+    private String buildStatusReport() {
+        FuelTank fuelTank = car.getFuelTank();
+        StringBuilder report = new StringBuilder();
+
+        report.append("STATUS MOBIL").append(System.lineSeparator());
+        report.append("============").append(System.lineSeparator()).append(System.lineSeparator());
+
+        appendStatusLine(report, "Nomor Registrasi", car.getRegistrationNum());
+        appendStatusLine(report, "Nomor Polisi", car.getLicenseNumber());
+        appendStatusLine(report, "Tahun", String.valueOf(car.getYear()));
+        report.append(System.lineSeparator());
+
+        report.append("KONDISI SAAT INI").append(System.lineSeparator());
+        report.append("----------------").append(System.lineSeparator());
+        appendStatusLine(report, "Mesin", car.isPoweredOn() ? "Hidup" : "Mati");
+        appendStatusLine(report, "Autopilot", autopilot.isActive() ? "Hidup" : "Mati");
+        appendStatusLine(report, "Mode", autopilot.getMode().name());
+        appendStatusLine(report, "Kecepatan", String.format("%.1f KM/Jam", car.getCurrentSpeed()));
+        appendStatusLine(report, "Gigi", car.getGearDisplay());
+        appendStatusLine(report, "Lampu Sen", car.getTurnSignal());
+        report.append(System.lineSeparator());
+
+        report.append("BENSIN").append(System.lineSeparator());
+        report.append("------").append(System.lineSeparator());
+        appendStatusLine(report, "Isi Tangki", String.format("%.1f / %.1f Liter", fuelTank.getCurrentLiters(), fuelTank.getCapacityLiters()));
+        appendStatusLine(report, "Persentase", String.format("%.0f%%", fuelTank.getFuelPercentage()));
+        report.append(System.lineSeparator());
+
+        report.append("AUTOPILOT").append(System.lineSeparator());
+        report.append("---------").append(System.lineSeparator());
+        appendStatusLine(report, "Target Cruise", String.format("%.1f KM/Jam", autopilot.getTargetSpeed()));
+        appendStatusLine(report, "Jarak Aman", String.format("%.1f Meter", autopilot.getMinSafeDistance()));
+        appendStatusLine(report, "Speed Sensor", String.format("%.1f KM/Jam", autopilot.getCurrentSpeed()));
+        report.append(System.lineSeparator());
+
+        report.append("KOMPONEN UTAMA").append(System.lineSeparator());
+        report.append("--------------").append(System.lineSeparator());
+        appendStatusLine(report, "Engine", car.getEngine().toString());
+        appendStatusLine(report, "Gearbox", "Gigi " + car.getGearDisplay());
+        appendStatusLine(report, "Body", car.getBody().toString());
+        appendStatusLine(report, "Brake", car.getBrake().toString());
+        appendStatusLine(report, "Jumlah Roda", String.valueOf(car.getWheels().length));
+
+        return report.toString();
+    }
+
+    private void appendStatusLine(StringBuilder report, String label, String value) {
+        report.append(String.format("%-17s: %s%n", label, value));
     }
 
     private void handleFillFuel() {

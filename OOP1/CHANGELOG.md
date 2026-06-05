@@ -110,3 +110,24 @@
 - [MODIFIED] src/main/java/autopilotcar/autopilot/ObjectDetector.java -> scan frequent membuat 1 sampai 3 objek dengan jarak lebih dekat agar tombol Simulasi Deteksi Objek terasa lebih aktif daripada deteksi normal
 - [MODIFIED] diagramClass/ClassDiagram.wsd -> menambahkan method simulateObjectDetection(), scanFrequent(), dan readFrequentData() ke diagram class
 - [NOTE] Frekuensi deteksi normal dibuat jarang, sedangkan simulasi manual dibuat lebih sering; keduanya tetap memakai aturan urgent dan non-urgent yang sama
+## [PROMPT-15] - Formatted GUI Status Popup
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> memperbaiki popup Status Mobil agar tidak lagi menampilkan dump object panjang dari getStatus()
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> menambahkan buildStatusReport() untuk menyusun informasi status dalam section Identitas, Kondisi Saat Ini, Bensin, Autopilot, dan Komponen Utama
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> menampilkan status pada JTextArea monospaced di dalam JScrollPane agar rapi, mudah dibaca, dan tetap nyaman saat isi laporan panjang
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> menambahkan appendStatusLine() untuk format label dan nilai status yang konsisten
+- [NOTE] Popup Status Mobil sekarang menampilkan data penting seperti mesin, autopilot, mode, speed, gigi, lampu sen, bensin, target cruise, dan komponen utama secara terstruktur
+## [PROMPT-16] - Autopilot Turn Signal and Timed Detection
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> menambahkan dependency opsional ke Car agar autopilot dapat mengatur lampu sen saat manuver menghindari obstacle
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> collision avoidance untuk VEHICLE dan OBSTACLE sekarang menyalakan lampu sen kiri atau kanan secara otomatis sebagai tanda menghindari rintangan
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> ketika obstacle sudah tidak terdeteksi dan mode kembali ke CRUISE_CONTROL, lampu sen dimatikan lewat driveStraight()
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> simulateObjectDetection() sekarang berjalan sebagai sesi 5 sampai 10 detik selama tidak ada kondisi urgent yang menghentikan mobil
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> obstacle urgent seperti PEDESTRIAN atau UNKNOWN tetap menjalankan emergency stop bertahap dan menghentikan sesi simulasi
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> TRAFFIC_SIGN tidak lagi mengubah target cruise control; sistem hanya memperlambat sementara lalu kembali mengejar target cruise semula
+- [MODIFIED] src/main/java/autopilotcar/ui/CarSimulator.java -> mengirim referensi Car ke AutopilotSystem agar lampu sen autopilot bisa tersinkron dengan dashboard GUI
+- [MODIFIED] diagramClass/ClassDiagram.wsd -> menambahkan atribut car pada AutopilotSystem untuk mencerminkan integrasi lampu sen autopilot
+- [NOTE] Cruise control hanya berubah lewat input user atau default 50 KM/Jam saat autopilot diaktifkan
+## [PROMPT-17] - Autopilot Activation Speed Sync
+- [MODIFIED] src/main/java/autopilotcar/autopilot/AutopilotSystem.java -> saat autopilot diaktifkan, SpeedSensor langsung disinkronkan dengan currentSpeed dari Car
+- [NOTE] Jika mobil sedang berjalan di atas cruise default 50 KM/Jam saat autopilot diaktifkan, cruise control akan menurunkan kecepatan bertahap 5 KM/Jam per update sampai mendekati target
+- [NOTE] Jika mobil sedang berjalan di bawah cruise default 50 KM/Jam saat autopilot diaktifkan, cruise control akan menaikkan kecepatan bertahap 5 KM/Jam per update sampai mendekati target
+- [NOTE] Perubahan ini menjaga transisi dari mode manual ke autopilot tetap memakai kecepatan aktual mobil, bukan nilai SpeedSensor lama
