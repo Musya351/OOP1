@@ -46,3 +46,30 @@
 ## [PROMPT-8] - README Compile Fix
 - [MODIFIED] README.md -> memperbaiki instruksi compile agar sesuai dengan PowerShell dan posisi root folder proyek di Windows
 - [NOTE] Pola `**/*.java` tidak diekspansi langsung oleh `javac` pada PowerShell; gunakan daftar file dari `Get-ChildItem`
+## [PROMPT-9] - Menu State Autopilot
+- [MODIFIED] src/main/java/autopilotcar/ui/ConsoleUI.java -> mengubah tampilan menu menjadi berbasis kondisi: menu awal saat mesin mati, menu mesin hidup, dan menu autopilot aktif
+- [MODIFIED] src/main/java/autopilotcar/ui/ConsoleUI.java -> menu awal hanya menampilkan Hidupkan Mesin, Isi Bensin, dan Keluar; menu mesin hidup menampilkan Matikan Mesin, Status Mobil, dan Aktifkan Autopilot
+- [MODIFIED] src/main/java/autopilotcar/ui/ConsoleUI.java -> menu autopilot aktif menampilkan Set Cruise Control, Simulasi Deteksi Objek, Emergency Stop Manual, dan Nonaktifkan Autopilot
+- [MODIFIED] src/main/java/autopilotcar/model/Car.java -> menambahkan fuelLevel, accessor, validasi nilai bensin, dan method fillFuel() agar opsi Isi Bensin mengisi tangki hingga penuh
+- [NOTE] Matikan Mesin mengembalikan program ke menu awal, sedangkan Nonaktifkan Autopilot dan Emergency Stop Manual mengembalikan program ke menu mesin hidup
+## [PROMPT-10] - FuelTank Persistence and Consumption
+- [CREATED] src/main/java/autopilotcar/model/FuelTank.java -> menambahkan class tangki bensin berkapasitas 40 liter dengan operasi isi penuh, konsumsi bensin, validasi nilai, status kosong, dan representasi string
+- [MODIFIED] src/main/java/autopilotcar/model/Car.java -> mengganti fuelLevel sederhana menjadi komposisi FuelTank dan menambahkan konsumsi BBM berdasarkan waktu berjalan dengan rasio 10 detik per liter
+- [MODIFIED] src/main/java/autopilotcar/model/Car.java -> mobil otomatis berhenti saat BBM habis tanpa mematikan mesin, menonaktifkan status autopilot mobil, mengembalikan kecepatan ke 0, dan gigi ke 0
+- [MODIFIED] src/main/java/autopilotcar/ui/CarSimulator.java -> memuat data bensin terakhir dari file fuel-level.txt saat simulator membuat objek mobil
+- [MODIFIED] src/main/java/autopilotcar/ui/ConsoleUI.java -> menyimpan data bensin terakhir ke fuel-level.txt saat program keluar, mesin dimatikan, bensin diisi, autopilot dinonaktifkan, emergency stop, dan setelah update konsumsi
+- [MODIFIED] src/main/java/autopilotcar/ui/ConsoleUI.java -> menambahkan opsi Isi Bensin pada menu mesin hidup agar mobil yang berhenti karena BBM habis tetap bisa diisi tanpa mematikan mesin
+- [MODIFIED] diagramClass/ClassDiagram.wsd -> menambahkan class FuelTank dan relasinya sebagai komposisi dari Car
+- [NOTE] Jika file fuel-level.txt belum ada atau rusak, tangki bensin otomatis dibuat penuh sebagai nilai awal
+- [NOTE] Implementasi file persistence memakai API Java 8 agar tetap kompatibel dengan JDK lama
+## [PROMPT-11] - Realtime GUI Dashboard
+- [CREATED] src/main/java/autopilotcar/ui/DashboardGUI.java -> menambahkan dashboard GUI berbasis Swing dengan input kontrol kendaraan dan panel status realtime
+- [CREATED] src/main/java/autopilotcar/ui/GuiCarSimulator.java -> menambahkan entry point khusus untuk menjalankan dashboard GUI tanpa menghapus mode konsol
+- [MODIFIED] src/main/java/autopilotcar/model/Car.java -> menambahkan state turnSignal dengan nilai Kiri, Kanan, atau Mati untuk mendukung tampilan lampu sen pada dashboard
+- [MODIFIED] src/main/java/autopilotcar/model/Car.java -> menambahkan driveStraight() dan getTurnSignal() agar GUI bisa mematikan lampu sen saat mobil lurus
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> dashboard menampilkan gigi yang digunakan, kecepatan KM/Jam, mode berjalan, lampu sen, bensin, kondisi mesin, dan kondisi autopilot secara realtime melalui Swing Timer
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> input GUI menyediakan Hidupkan Mesin, Matikan Mesin, Isi Bensin, Aktifkan Autopilot, Set Cruise Control, Simulasi Deteksi Objek, Emergency Stop Manual, Nonaktifkan Autopilot, Tambah Kecepatan, Belok Kiri, Lurus, dan Belok Kanan
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> GUI menyimpan bensin terakhir ke fuel-level.txt saat dashboard refresh dan saat window ditutup
+- [MODIFIED] README.md -> menambahkan instruksi run dashboard GUI realtime dan daftar fitur GUI
+- [MODIFIED] diagramClass/ClassDiagram.wsd -> menambahkan DashboardGUI, GuiCarSimulator, relasi GUI, serta atribut/method lampu sen pada Car
+- [NOTE] Mode konsol tetap tersedia melalui CarSimulator, sedangkan GUI dijalankan melalui GuiCarSimulator

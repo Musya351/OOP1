@@ -7,12 +7,14 @@ import autopilotcar.model.Body;
 import autopilotcar.model.Brake;
 import autopilotcar.model.Car;
 import autopilotcar.model.Engine;
+import autopilotcar.model.FuelTank;
 import autopilotcar.model.GearBox;
 import autopilotcar.model.GearBoxType;
 import autopilotcar.model.Suspension;
 import autopilotcar.model.Tire;
 import autopilotcar.model.Wheel;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,10 +24,11 @@ public class CarSimulator {
     private AutopilotSystem autopilot;
 
     public Car initializeCar() {
+        FuelTank fuelTank = FuelTank.load(Paths.get("fuel-level.txt"));
         Engine engine = new Engine(2.0f, 4);
 
         List<GearBoxType> gearBoxTypes = new ArrayList<>();
-        gearBoxTypes.add(new GearBoxType("CVT", "Automatic transmission for autopilot mode", true));
+        gearBoxTypes.add(new GearBoxType("AT", "Automatic transmission for autopilot mode", true));
         GearBox gearBox = new GearBox(new float[]{3.2f, 2.1f, 1.5f, 1.0f, 0.8f}, 1, gearBoxTypes);
 
         Body body = new Body(4, "Silver", "Sedan");
@@ -55,7 +58,8 @@ public class CarSimulator {
                 body,
                 suspensions,
                 brake,
-                wheels
+                wheels,
+                fuelTank
         );
 
         return car;

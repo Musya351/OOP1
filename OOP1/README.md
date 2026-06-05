@@ -17,6 +17,13 @@ cd OOP1
 java -cp bin autopilotcar.ui.CarSimulator
 ```
 
+Run dashboard GUI realtime:
+
+```bash
+cd OOP1
+java -cp bin autopilotcar.ui.GuiCarSimulator
+```
+
 Alternatif entry point:
 
 ```bash
@@ -32,4 +39,5 @@ java -cp bin autopilotcar.Main
 - Simulasi penanganan obstacle berdasarkan jenis objek
 - Penyesuaian gigi otomatis berdasarkan kecepatan
 - Antarmuka konsol untuk melihat status mobil, mengaktifkan autopilot, mengatur cruise control, simulasi deteksi objek, emergency stop manual, dan menonaktifkan autopilot
+- Dashboard GUI realtime untuk input kontrol dan pemantauan gigi, kecepatan, mode, lampu sen, bensin, mesin, dan autopilot
 - Entry point alternatif melalui `autopilotcar.Main`

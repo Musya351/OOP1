@@ -16,14 +16,23 @@ package "model" #EAF2FF {
     - registrationNum   : String
     - year              : int
     - licenseNumber     : String
+    - poweredOn         : boolean
     - autopilotEnabled  : boolean
     - currentSpeed      : float
+    - fuelTank          : FuelTank
+    - turnSignal        : String
     --
+    + turnOn() : boolean
+    + turnOff() : boolean
+    + fillFuel()
+    + updateFuelUsage() : boolean
     + moveForward()
     + moveBackward()
     + stop()
     + turnRight()
     + turnLeft()
+    + driveStraight()
+    + getTurnSignal() : String
     + enableAutopilot()
     + disableAutopilot()
     + getStatus() : String
@@ -83,6 +92,18 @@ package "model" #EAF2FF {
     - width       : float
     - airPressure : float
     - treadDepth  : float
+  }
+
+  class FuelTank {
+    - currentLiters : float
+    --
+    + getCapacityLiters() : float
+    + getCurrentLiters()  : float
+    + getFuelPercentage() : float
+    + fillFull()
+    + consume(liters : float) : boolean
+    + save(path : Path)
+    + {static} load(path : Path) : FuelTank
   }
 }
 
@@ -178,6 +199,14 @@ package "ui" #FFF0F5 {
     + setupAutopilot()
     + startSimulation()
   }
+
+  class DashboardGUI {
+    + {static} show(car : Car, autopilot : AutopilotSystem)
+  }
+
+  class GuiCarSimulator {
+    + {static} main(args : String[]) : void
+  }
 }
 
 ' === RELASI MODEL ===
@@ -188,6 +217,7 @@ Car "1" *-- "1"    Body
 Car "1" *-- "1..*" Suspension
 Car "1" *-- "1"    Brake
 Car "1" *-- "4"    Wheel
+Car "1" *-- "1"    FuelTank
 GearBox    "1" o-- "0..*" GearBoxType
 Wheel      "1" *-- "1"    Tire
 Suspension      --> Wheel
@@ -209,5 +239,9 @@ AutopilotSystem --> Engine
 ConsoleUI   --> Car
 CarSimulator --> ConsoleUI
 CarSimulator --> Car
+DashboardGUI --> Car
+DashboardGUI --> AutopilotSystem
+GuiCarSimulator --> CarSimulator
+GuiCarSimulator --> DashboardGUI
 
 @enduml
