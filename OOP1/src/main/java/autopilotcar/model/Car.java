@@ -222,6 +222,13 @@ public class Car {
 
         engine.start();
         engine.accelerate();
+        if (reverseMode) {
+            currentSpeed += 5.0f;
+            gearBox.setCurrentGear(0);
+            System.out.println("Car is moving backward faster at speed: " + currentSpeed);
+            return;
+        }
+
         reverseMode = false;
         currentSpeed += 10.0f;
         gearBox.autoShift(currentSpeed);
@@ -237,6 +244,11 @@ public class Car {
 
         if (fuelTank.isEmpty()) {
             stopBecauseFuelEmpty();
+            return;
+        }
+
+        if (currentSpeed > 0.0f) {
+            System.out.println("Car must stop before shifting to reverse gear.");
             return;
         }
 
@@ -307,6 +319,10 @@ public class Car {
             return "R";
         }
         return String.valueOf(gearBox.getCurrentGear());
+    }
+
+    public boolean isReverseMode() {
+        return reverseMode;
     }
 
     public void enableAutopilot() {

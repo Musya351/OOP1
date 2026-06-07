@@ -131,3 +131,11 @@
 - [NOTE] Jika mobil sedang berjalan di atas cruise default 50 KM/Jam saat autopilot diaktifkan, cruise control akan menurunkan kecepatan bertahap 5 KM/Jam per update sampai mendekati target
 - [NOTE] Jika mobil sedang berjalan di bawah cruise default 50 KM/Jam saat autopilot diaktifkan, cruise control akan menaikkan kecepatan bertahap 5 KM/Jam per update sampai mendekati target
 - [NOTE] Perubahan ini menjaga transisi dari mode manual ke autopilot tetap memakai kecepatan aktual mobil, bukan nilai SpeedSensor lama
+## [PROMPT-18] - Reverse Gear Speed Behavior
+- [MODIFIED] src/main/java/autopilotcar/model/Car.java -> Mundur (Gigi R) sekarang hanya bisa digunakan ketika mobil dalam keadaan diam atau currentSpeed 0
+- [MODIFIED] src/main/java/autopilotcar/model/Car.java -> ketika mobil sedang dalam reverseMode, moveForward() tidak lagi langsung pindah ke gigi maju; method ini menambah kecepatan mundur dan tetap mempertahankan gigi R
+- [MODIFIED] src/main/java/autopilotcar/model/Car.java -> menambahkan isReverseMode() agar GUI bisa membedakan Tambah Kecepatan maju dan Tambah Kecepatan mundur
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> tombol Tambah Kecepatan menampilkan log Kecepatan mundur bertambah saat mobil sedang dalam Gigi R
+- [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> tombol Mundur (Gigi R) menolak perpindahan ke reverse jika mobil belum diam dan menampilkan log penjelasan
+- [MODIFIED] diagramClass/ClassDiagram.wsd -> menambahkan method isReverseMode() pada class Car
+- [NOTE] Rem tetap mengurangi kecepatan mundur; ketika speed menjadi 0, reverseMode dimatikan dan gigi kembali 0

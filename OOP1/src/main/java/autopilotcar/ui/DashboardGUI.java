@@ -413,8 +413,13 @@ public class DashboardGUI extends JFrame {
     }
 
     private void handleMoveForward() {
+        boolean wasReverseMode = car.isReverseMode();
         car.moveForward();
-        appendLog("Mobil maju / tambah kecepatan.");
+        if (wasReverseMode) {
+            appendLog("Kecepatan mundur bertambah.");
+        } else {
+            appendLog("Mobil maju / tambah kecepatan.");
+        }
         refreshDashboard();
     }
 
@@ -425,8 +430,16 @@ public class DashboardGUI extends JFrame {
     }
 
     private void handleMoveBackward() {
+        if (car.getCurrentSpeed() > 0.0f) {
+            appendLog("Gigi R hanya bisa digunakan saat mobil diam.");
+            refreshDashboard();
+            return;
+        }
+
         car.moveBackward();
-        appendLog("Mobil mundur. Gigi R aktif.");
+        if (car.isReverseMode()) {
+            appendLog("Mobil mundur. Gigi R aktif.");
+        }
         refreshDashboard();
     }
 

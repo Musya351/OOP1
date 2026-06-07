@@ -36,6 +36,7 @@ package "model" #EAF2FF {
     + driveStraight()
     + getTurnSignal() : String
     + getGearDisplay() : String
+    + isReverseMode() : boolean
     + enableAutopilot()
     + disableAutopilot()
     + getStatus() : String
