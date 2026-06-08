@@ -139,3 +139,29 @@
 - [MODIFIED] src/main/java/autopilotcar/ui/DashboardGUI.java -> tombol Mundur (Gigi R) menolak perpindahan ke reverse jika mobil belum diam dan menampilkan log penjelasan
 - [MODIFIED] diagramClass/ClassDiagram.wsd -> menambahkan method isReverseMode() pada class Car
 - [NOTE] Rem tetap mengurangi kecepatan mundur; ketika speed menjadi 0, reverseMode dimatikan dan gigi kembali 0
+## [PROMPT-19] - Class Diagram Synchronization Review
+- [MODIFIED] diagramClass/ClassDiagram.wsd -> memperbarui struktur class diagram agar sesuai dengan source Java terbaru, termasuk Main, FuelTank, DashboardGUI, GuiCarSimulator, dan dependency AutopilotSystem ke Car
+- [MODIFIED] diagramClass/ClassDiagram.wsd -> menambahkan atribut terbaru seperti lastFuelUpdateMillis, reverseMode, random, konstanta cruise/detection, fuelSavePath, timer GUI, dan panel/input state GUI
+- [MODIFIED] diagramClass/ClassDiagram.wsd -> menambahkan method terbaru seperti applyBrake(float), isReverseMode(), simulateObjectDetection(), scanFrequent(), readFrequentData(), readData(), save/load FuelTank, dan show() DashboardGUI
+- [MODIFIED] diagramClass/ClassDiagram.wsd -> menghapus/mengoreksi method yang tidak ada di source Java seperti addCar/removeCar pada CarModel, rotate/stop pada Wheel, inflate pada Tire, dan absorbShock pada Suspension
+- [MODIFIED] diagramClass/ClassDiagram.wsd -> memperbaiki relasi agar Car tidak lagi digambarkan memiliki AutopilotSystem langsung; AutopilotSystem sekarang berasosiasi ke Car, sedangkan CarSimulator mengelola Car dan AutopilotSystem
+- [REVIEWED] activityDiagramPerFitur/*.wsd -> activity diagram per fitur sudah ditinjau dan ditemukan belum sepenuhnya sesuai dengan implementasi terbaru
+- [NOTE] Activity diagram yang belum sesuai terutama AlurMenuKonsol(UI), CruiseControl, DeteksiObject&CollisionAvoidance, EmergencyStop, dan PerpindahanGigiOtomatis karena belum memuat GUI state menu, FuelTank persistence, deteksi normal jarang, simulasi 5-10 detik, lampu sen autopilot, emergency stop bertahap 5 KM/Jam per detik, dan aturan Gigi R terbaru
+## [PROMPT-20] - Activity Diagram Synchronization
+- [MODIFIED] activityDiagramPerFitur/AlurMenuKonsol(UI).wsd -> memperbarui alur menu agar mencerminkan ConsoleUI dan DashboardGUI terbaru, termasuk menu awal, menu mesin hidup, menu autopilot aktif, state button GUI, dan penyimpanan FuelTank ke fuel-level.txt
+- [MODIFIED] activityDiagramPerFitur/CruiseControl.wsd -> memperbarui alur cruise control agar memuat default cruise 50 KM/Jam saat autopilot aktif, sinkronisasi SpeedSensor dari currentSpeed Car, perubahan kecepatan bertahap 5 KM/Jam, deteksi normal yang jarang, dan target cruise yang hanya berubah dari input user atau default aktivasi
+- [MODIFIED] activityDiagramPerFitur/DeteksiObject&CollisionAvoidance.wsd -> memperbarui alur deteksi objek agar membedakan deteksi normal rare dan simulasi frequent 5 sampai 10 detik, menyalakan lampu sen saat menghindari VEHICLE/OBSTACLE, memperlambat sementara untuk TRAFFIC_SIGN, dan kembali bertahap ke CRUISE_CONTROL saat jalan aman
+- [MODIFIED] activityDiagramPerFitur/EmergencyStop.wsd -> memperjelas emergency stop otomatis dan manual sebagai pengereman bertahap 5 KM/Jam per detik sampai speed 0, lalu stop, reset gigi, matikan lampu sen, dan simpan FuelTank
+- [MODIFIED] activityDiagramPerFitur/PerpindahanGigiOtomatis.wsd -> memperbarui alur gigi otomatis dan reverse agar Mundur (Gigi R) hanya bisa saat currentSpeed 0, Tambah Kecepatan saat reverseMode menambah kecepatan mundur tanpa pindah ke gigi maju, dan Rem mematikan reverseMode saat speed menjadi 0
+- [NOTE] Activity diagram per fitur sekarang diselaraskan dengan implementasi Java terbaru tanpa mengubah source code Java
+## [PROMPT-21] - Missing Activity Diagram Coverage
+- [REVIEWED] activityDiagramPerFitur/*.wsd -> meninjau ulang cakupan activity diagram terhadap fitur Java terbaru dan menemukan beberapa fitur yang sudah ada di kode tetapi belum punya file diagram khusus
+- [CREATED] activityDiagramPerFitur/FuelTankPersistence.wsd -> menambahkan diagram khusus untuk load/save fuel-level.txt, kapasitas 40 liter, konsumsi BBM 10 detik per liter, isi bensin penuh, dan kondisi mobil berhenti saat BBM habis tanpa mematikan mesin
+- [CREATED] activityDiagramPerFitur/DashboardRealtimeGUI.wsd -> menambahkan diagram khusus refresh dashboard Swing realtime, update autopilot per 1 detik, update label gigi/kecepatan/mode/lampu sen/bensin/mesin/autopilot, state button, dan penyimpanan bensin saat window ditutup
+- [CREATED] activityDiagramPerFitur/StatusMobilPopup.wsd -> menambahkan diagram khusus popup Status Mobil yang menyusun laporan rapi dalam section Identitas, Kondisi Saat Ini, Bensin, Autopilot, dan Komponen Utama
+- [CREATED] activityDiagramPerFitur/KontrolManualGUI.wsd -> menambahkan diagram khusus kontrol manual GUI seperti Tambah Kecepatan, Rem, Belok Kiri, Belok Kanan, Lurus, Mundur Gigi R, Matikan Mesin, dan refresh dashboard setelah aksi
+- [NOTE] Fitur utama proyek sekarang memiliki cakupan activity diagram yang lebih lengkap tanpa perubahan pada source code Java
+## [PROMPT-22] - Use Case and State Diagram Documentation
+- [CREATED] useCaseDiagram/UseCaseDiagram.wsd -> menambahkan use case diagram PlantUML untuk aktor User/Pengemudi dan fitur utama seperti Console UI, GUI realtime, hidup/matikan mesin, isi bensin, status mobil, kontrol manual, autopilot, cruise control, deteksi objek, collision avoidance, emergency stop, konsumsi BBM, simpan bensin, dan keluar program
+- [CREATED] stateDiagram/StateDiagram.wsd -> menambahkan state diagram PlantUML yang menggambarkan transisi Program Mulai, Mesin Mati, Mesin Hidup, Manual Driving, Reverse Mode, Autopilot Aktif, Cruise Control, Simulasi Deteksi Objek, Collision Avoidance, Emergency Stop, BBM Habis, dan Program Keluar
+- [NOTE] Diagram baru dibuat untuk kebutuhan BAB 2 laporan desain tanpa mengubah source code Java

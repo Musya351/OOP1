@@ -8,67 +8,83 @@ skinparam ActivityDiamondBorderColor #D94A8C
 
 start
 
+if (User klik Mundur Gigi R?) then (ya)
+  if (Car.currentSpeed == 0?) then (ya)
+    :Car.moveBackward();
+    :reverseMode = true;
+    :currentSpeed = 5 KM/Jam;
+    :GearBox.currentGear = 0;
+    :Dashboard menampilkan gigi R;
+  else (tidak)
+    :Tolak pindah ke reverse;
+    :Tampilkan pesan "Gigi R hanya bisa saat mobil diam";
+    stop
+  endif
+
+  repeat
+    if (User klik Tambah Kecepatan?) then (ya)
+      :Car.moveForward();
+      :Karena reverseMode aktif, speed mundur += 5;
+      :GearBox.currentGear tetap 0;
+      :Dashboard tetap menampilkan R;
+    elseif (User klik Rem?) then (ya)
+      :Car.applyBrake();
+      :speed -= 10;
+      if (speed == 0?) then (ya)
+        :reverseMode = false;
+        :GearBox.currentGear = 0;
+      endif
+    endif
+  repeat while (reverseMode aktif?) is (ya)
+  ->tidak;
+
+  stop
+endif
+
 :AutopilotSystem.adjustGear();
-:SpeedSensor.getSpeed() → currentSpeed;
-:SpeedSensor.getOptimalGear() → optimalGear;
-:GearBox.currentGear → currentGear;
+:SpeedSensor.getSpeed() -> currentSpeed;
+:SpeedSensor.getOptimalGear() -> optimalGear;
+:GearBox.currentGear -> currentGear;
 
 if (GearBoxType.isAutomatic == true?) then (tidak)
-  :displayAlert("Transmisi manual\ntidak bisa auto-shift");
+  :Tampilkan pesan transmisi manual tidak bisa auto-shift;
   stop
 endif
 
 if (optimalGear == currentGear?) then (ya)
-  :Gigi sudah optimal\ntidak ada perubahan;
+  :Gigi sudah optimal;
   stop
 endif
 
-if (optimalGear > currentGear?) then (ya)
-
+if (optimalGear > currentGear?) then (shift up)
   repeat
-    :GearBox.shiftUp();
-    :currentGear + 1;
-    :SpeedSensor.getSpeed() → currentSpeed;
-    :SpeedSensor.getOptimalGear() → optimalGear;
-
-    if (ObjectDetector.isObstacleAhead()?) then (ya)
+    if (checkObstacleBeforeShiftUp dan ObjectDetector.isObstacleAhead()?) then (ya)
+      :mode = COLLISION_AVOIDANCE;
       :Batalkan shift up;
-      :set mode = COLLISION_AVOIDANCE;
       stop
     endif
-
-  repeat while (currentGear < optimalGear?) is (ya)
-  -> tidak;
-
-else (optimalGear < currentGear)
-
+    :GearBox.shiftUp();
+  repeat while (GearBox.currentGear < optimalGear?) is (ya)
+  ->tidak;
+else (shift down)
   repeat
     :GearBox.shiftDown();
-    :currentGear - 1;
-    :SpeedSensor.getSpeed() → currentSpeed;
-    :SpeedSensor.getOptimalGear() → optimalGear;
-
-    if (currentSpeed == 0?) then (ya)
-      :GearBox.shiftDown() ke gigi 1;
-      :Car.stop();
-      stop
+    if (SpeedSensor.currentSpeed == 0 dan gear > 1?) then (ya)
+      :Shift down sampai gigi 1;
     endif
-
-  repeat while (currentGear > optimalGear?) is (ya)
-  -> tidak;
-
+  repeat while (GearBox.currentGear > optimalGear?) is (ya)
+  ->tidak;
 endif
 
 :GearBox.autoShift(currentSpeed);
-:displayAlert("Gigi sekarang: " + currentGear);
+:Tampilkan gigi sekarang;
 
 if (mode == CRUISE_CONTROL?) then (ya)
-  :SpeedSensor.maintainSpeed(targetSpeed);
-  :Kembali ke loop Cruise Control;
+  :Kembali ke cruise control;
 elseif (mode == COLLISION_AVOIDANCE?) then (ya)
-  :Kembali ke loop Collision Avoidance;
+  :Kembali ke collision avoidance;
 else (MANUAL_OVERRIDE)
-  :Serahkan kendali ke user;
+  :Kendali manual user;
 endif
 
 stop

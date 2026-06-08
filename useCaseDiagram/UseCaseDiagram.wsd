@@ -1,0 +1,102 @@
+@startuml UseCaseDiagramAutopilotCar
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #EEF8FF
+  BorderColor #4A90D9
+  ArrowColor #4A90D9
+}
+
+actor "User / Pengemudi" as User
+
+rectangle "AutopilotCar Simulator" {
+  usecase "Menjalankan Console UI" as UCConsole
+  usecase "Menjalankan GUI Realtime" as UCGui
+
+  usecase "Hidupkan Mesin" as UCTurnOn
+  usecase "Matikan Mesin" as UCTurnOff
+  usecase "Isi Bensin" as UCFuel
+  usecase "Keluar Program" as UCExit
+  usecase "Simpan Bensin Terakhir" as UCSaveFuel
+  usecase "Pantau Dashboard Realtime" as UCDashboard
+  usecase "Lihat Status Mobil" as UCStatus
+
+  usecase "Tambah Kecepatan" as UCAccelerate
+  usecase "Rem" as UCBrake
+  usecase "Belok Kiri" as UCTurnLeft
+  usecase "Belok Kanan" as UCTurnRight
+  usecase "Lurus" as UCStraight
+  usecase "Mundur (Gigi R)" as UCReverse
+
+  usecase "Aktifkan Autopilot" as UCActivateAuto
+  usecase "Nonaktifkan Autopilot" as UCDeactivateAuto
+  usecase "Set Cruise Control" as UCCruise
+  usecase "Simulasi Deteksi Objek" as UCDetect
+  usecase "Emergency Stop Manual" as UCEmergency
+
+  usecase "Deteksi Objek Normal Jarang" as UCRareDetect
+  usecase "Collision Avoidance" as UCAvoidance
+  usecase "Emergency Stop Otomatis" as UCAutoEmergency
+  usecase "Konsumsi BBM Saat Berjalan" as UCFuelUse
+}
+
+User --> UCConsole
+User --> UCGui
+User --> UCTurnOn
+User --> UCTurnOff
+User --> UCFuel
+User --> UCExit
+User --> UCStatus
+User --> UCAccelerate
+User --> UCBrake
+User --> UCTurnLeft
+User --> UCTurnRight
+User --> UCStraight
+User --> UCReverse
+User --> UCActivateAuto
+User --> UCDeactivateAuto
+User --> UCCruise
+User --> UCDetect
+User --> UCEmergency
+
+UCGui --> UCDashboard : <<include>>
+UCExit --> UCSaveFuel : <<include>>
+UCFuel --> UCSaveFuel : <<include>>
+UCTurnOff --> UCSaveFuel : <<include>>
+UCDeactivateAuto --> UCSaveFuel : <<include>>
+UCEmergency --> UCSaveFuel : <<include>>
+
+UCTurnOn ..> UCFuel : <<extend>>\nJika BBM kosong
+UCReverse ..> UCBrake : <<extend>>\nButuh mobil diam
+
+UCActivateAuto --> UCCruise : <<include>>\nDefault 50 KM/Jam
+UCCruise --> UCRareDetect : <<include>>
+UCRareDetect --> UCAvoidance : <<extend>>\nObjek non-urgent
+UCDetect --> UCAvoidance : <<extend>>\nObjek non-urgent
+UCDetect --> UCAutoEmergency : <<extend>>\nObjek urgent
+UCRareDetect --> UCAutoEmergency : <<extend>>\nObjek urgent
+
+UCAccelerate --> UCFuelUse : <<include>>
+UCReverse --> UCFuelUse : <<include>>
+UCCruise --> UCFuelUse : <<include>>
+
+note right of UCFuel
+  Isi Bensin membuat FuelTank penuh
+  sampai kapasitas 40 liter.
+end note
+
+note right of UCCruise
+  Target cruise hanya berubah
+  dari input user atau default
+  50 KM/Jam saat autopilot aktif.
+end note
+
+note right of UCAvoidance
+  Mobil mengurangi kecepatan,
+  menyalakan lampu sen kiri/kanan,
+  lalu kembali ke cruise saat aman.
+end note
+
+@enduml

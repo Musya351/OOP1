@@ -1,0 +1,70 @@
+@startuml KontrolManualGUI
+
+skinparam ActivityBackgroundColor #F0FFF0
+skinparam ActivityBorderColor #4A9D4A
+skinparam ArrowColor #4A9D4A
+skinparam ActivityDiamondBackgroundColor #FFF0F5
+skinparam ActivityDiamondBorderColor #D94A8C
+
+start
+
+:DashboardGUI menampilkan menu mesin hidup;
+note right
+  Tombol manual tersedia saat
+  mesin hidup dan autopilot mati.
+end note
+
+if (User klik Tambah Kecepatan?) then (ya)
+  :Simpan wasReverseMode = car.isReverseMode();
+  :Car.moveForward();
+  if (wasReverseMode?) then (ya)
+    :Kecepatan mundur += 5 KM/Jam;
+    :Gigi tetap tampil R;
+  else (tidak)
+    :Kecepatan maju += 10 KM/Jam;
+    :GearBox.autoShift(currentSpeed);
+  endif
+elseif (User klik Rem?) then (ya)
+  :Car.applyBrake();
+  :Kecepatan -= 10 KM/Jam;
+  if (speed == 0?) then (ya)
+    :reverseMode = false;
+    :gigi = 0;
+  else (speed masih ada)
+    :AutoShift jika bukan reverseMode;
+  endif
+elseif (User klik Belok Kiri?) then (ya)
+  :Car.turnLeft();
+  :Lampu sen = Kiri;
+elseif (User klik Belok Kanan?) then (ya)
+  :Car.turnRight();
+  :Lampu sen = Kanan;
+elseif (User klik Lurus?) then (ya)
+  :Car.driveStraight();
+  :Lampu sen = Mati;
+elseif (User klik Mundur Gigi R?) then (ya)
+  if (currentSpeed == 0?) then (ya)
+    :Car.moveBackward();
+    :reverseMode = true;
+    :Kecepatan mundur = 5 KM/Jam;
+    :Dashboard menampilkan gigi R;
+  else (tidak)
+    :Tolak pindah ke reverse;
+    :Log "Gigi R hanya bisa digunakan saat mobil diam";
+  endif
+elseif (User klik Matikan Mesin?) then (ya)
+  if (currentSpeed == 0?) then (ya)
+    :Car.turnOff();
+    :AutopilotSystem.deactivate();
+    :FuelTank.save("fuel-level.txt");
+  else (tidak)
+    :Log "Mesin tidak bisa dimatikan saat mobil masih bergerak";
+  endif
+endif
+
+:refreshDashboard();
+:Dashboard label dan tombol diperbarui realtime;
+
+stop
+
+@enduml

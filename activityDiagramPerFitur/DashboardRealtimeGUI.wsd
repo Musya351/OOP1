@@ -1,0 +1,60 @@
+@startuml DashboardRealtimeGUI
+
+skinparam ActivityBackgroundColor #EEF8FF
+skinparam ActivityBorderColor #4A90D9
+skinparam ArrowColor #4A90D9
+skinparam ActivityDiamondBackgroundColor #FFF0F5
+skinparam ActivityDiamondBorderColor #D94A8C
+
+start
+
+:GuiCarSimulator.main();
+:CarSimulator.initializeCar();
+:CarSimulator.setupAutopilot();
+:DashboardGUI.show(car, autopilot);
+:Bangun panel dashboard, input, dan log;
+:Start dashboardTimer 500 ms;
+
+repeat
+  :refreshDashboard();
+  :Car.updateFuelUsage();
+
+  if (BBM habis dan autopilot aktif?) then (ya)
+    :AutopilotSystem.deactivate();
+    :Log "BBM habis, mobil berhenti";
+  endif
+
+  if (autopilot.isActive()?) then (ya)
+    :Tambah autopilotElapsedMillis;
+    if (elapsed >= 1000 ms?) then (ya)
+      :AutopilotSystem.update();
+      :Car.setCurrentSpeed(autopilot speed);
+      :Reset elapsed autopilot;
+    endif
+  else (tidak)
+    :Reset elapsed autopilot;
+  endif
+
+  :Ambil FuelTank terbaru;
+  :Update label Gigi;
+  :Update label Kecepatan KM/Jam;
+  :Update label Mode Berjalan;
+  :Update label Lampu Sen;
+  :Update label Bensin liter dan persen;
+  :Update label Kondisi Mesin;
+  :Update label Kondisi Autopilot;
+  :updateInputButtons() berdasarkan state;
+  :FuelTank.save("fuel-level.txt");
+
+repeat while (Window masih terbuka?) is (ya)
+->tidak;
+
+:Window closing atau tombol Keluar;
+:FuelTank.save("fuel-level.txt");
+:dashboardTimer.stop();
+:emergencyStopTimer.stop() jika aktif;
+:dispose window;
+
+stop
+
+@enduml

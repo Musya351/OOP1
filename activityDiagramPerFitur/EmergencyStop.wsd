@@ -8,57 +8,53 @@ skinparam ActivityDiamondBorderColor #D94A8C
 
 start
 
-if (Pemicu Emergency Stop?) then
-  split
-    :ObjectDetector.isObstacleAhead()\ndistance <= minSafeDistance;
-  split again
-    :ObjectType == PEDESTRIAN\natau UNKNOWN;
-  split again
-    :User input manual\nMANUAL_OVERRIDE;
-  split again
-    :SpeedSensor.isOverLimit()\n== true;
-  end split
+if (Pemicu Emergency Stop?) then (Auto urgent)
+  :ObjectType PEDESTRIAN atau UNKNOWN;
+  :Obstacle threat dalam minSafeDistance;
+elseif (Speed over limit)
+  :SpeedSensor.isOverLimit() == true;
+elseif (Manual GUI/Console)
+  :User pilih Emergency Stop Manual;
 endif
 
-:set mode = EMERGENCY_STOP;
-:displayAlert("EMERGENCY STOP DIAKTIFKAN!");
+if (Pemicu dari autopilot?) then (ya)
+  :mode = EMERGENCY_STOP;
+  :AutopilotSystem.gradualEmergencyStop();
+  repeat
+    :Brake.emergencyBrake();
+    :Engine.brake();
+    :SpeedSensor -= 5 KM/Jam;
+    :Tunggu 1 detik jika speed masih > 0;
+  repeat while (SpeedSensor.currentSpeed > 0?) is (ya)
+  ->tidak;
 
-fork
-  :Brake.emergencyBrake();
-fork again
-  :Engine.brake();
-fork again
-  :GearBox.shiftDown() bertahap;
-end fork
+  :Shift down sampai gigi rendah jika perlu;
+  :AutopilotSystem.deactivate();
+  :Car.driveStraight();
+else (manual)
+  :Car.disableAutopilot();
+  :AutopilotSystem.deactivate();
+  repeat
+    :Car.applyBrake(5.0f);
+    :Tunggu 1 detik;
+  repeat while (Car.currentSpeed > 0?) is (ya)
+  ->tidak;
 
-:SpeedSensor.getSpeed() → currentSpeed;
-
-repeat
-  :Monitor currentSpeed;
-  if (currentSpeed > 0?) then (ya)
-    :Brake.emergencyBrake() lanjut;
-  endif
-repeat while (currentSpeed > 0?) is (ya)
--> tidak;
-
-:Car.stop();
-:currentSpeed = 0;
-
-:AutopilotSystem.deactivate();
-:set mode = MANUAL_OVERRIDE;
-:set isActive = false;
-
-:displayAlert("Kendaraan berhenti total.\nSilakan periksa kondisi sekitar.");
-
-if (User konfirmasi lanjut?) then (ya)
-  :Car.enableAutopilot();
-  :AutopilotSystem.activate();
-  :set mode = CRUISE_CONTROL;
-  :Kembali ke operasi normal;
-else (tidak)
-  :Sistem tetap\ndalam MANUAL_OVERRIDE;
-  stop
+  :Car.stop();
 endif
+
+:Kecepatan = 0;
+:Gigi = 0;
+:reverseMode = false;
+:Lampu sen = Mati;
+:Mesin tetap mengikuti kondisi sebelumnya;
+
+if (BBM habis?) then (ya)
+  :Mobil berhenti tetapi mesin tidak dimatikan;
+endif
+
+:FuelTank.save("fuel-level.txt");
+:Tampilkan pesan emergency stop selesai;
 
 stop
 

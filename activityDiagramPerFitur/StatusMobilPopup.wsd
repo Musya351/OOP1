@@ -1,0 +1,61 @@
+@startuml StatusMobilPopup
+
+skinparam ActivityBackgroundColor #F7F7FF
+skinparam ActivityBorderColor #6B6BD9
+skinparam ArrowColor #6B6BD9
+skinparam ActivityDiamondBackgroundColor #FFF0F5
+skinparam ActivityDiamondBorderColor #D94A8C
+
+start
+
+:User klik Status Mobil pada GUI;
+:DashboardGUI.handleStatus();
+:buildStatusReport();
+
+:FuelTank fuelTank = car.getFuelTank();
+:Susun judul STATUS MOBIL;
+
+:Tambahkan section Identitas;
+note right
+  Nomor registrasi,
+  nomor polisi,
+  tahun.
+end note
+
+:Tambahkan section Kondisi Saat Ini;
+note right
+  Mesin, autopilot, mode,
+  kecepatan, gigi,
+  dan lampu sen.
+end note
+
+:Tambahkan section Bensin;
+note right
+  Liter saat ini,
+  kapasitas 40 liter,
+  dan persentase.
+end note
+
+:Tambahkan section Autopilot;
+note right
+  Target cruise,
+  jarak aman,
+  dan speed sensor.
+end note
+
+:Tambahkan section Komponen Utama;
+note right
+  Engine, gearbox,
+  body, brake,
+  dan jumlah roda.
+end note
+
+:Masukkan report ke JTextArea monospaced;
+:Bungkus dengan JScrollPane;
+:Tampilkan JOptionPane "Status Mobil";
+:appendLog("Status mobil ditampilkan.");
+:refreshDashboard();
+
+stop
+
+@enduml

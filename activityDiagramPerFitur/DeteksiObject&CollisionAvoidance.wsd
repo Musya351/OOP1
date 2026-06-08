@@ -8,69 +8,88 @@ skinparam ActivityDiamondBorderColor #D94A8C
 
 start
 
-:AutopilotSystem.update();
-:ObjectDetector.initialize();
-
-if (ObjectDetector.isReady()?) then (tidak)
-  :displayAlert("Sensor tidak siap!");
-  stop
+if (Sumber deteksi?) then (Autopilot normal)
+  :AutopilotSystem.update();
+  :scanForObstacles = random < NORMAL_DETECTION_CHANCE;
+  note right
+    Deteksi normal tetap berjalan,
+    tetapi frekuensi rintangan jarang.
+  end note
+elseif (Button Simulasi Deteksi Objek)
+  :AutopilotSystem.simulateObjectDetection();
+  :duration = 5 sampai 10 detik;
+  :scanForObstacles = true;
+  :frequentScan = true;
+  note right
+    Simulasi memakai scanFrequent()
+    sehingga objek lebih sering muncul.
+  end note
 endif
 
 repeat
-
-  :ObjectDetector.scan() → List<DetectedObject>;
-
-  if (List kosong?) then (ya)
-    :Tidak ada objek terdeteksi;
-    :Lanjut berkendara normal;
-  else (tidak)
-    :ObjectDetector.getNearestObject();
-    :ObjectDetector.getDistance() → distance;
-
-    if (distance <= minSafeDistance?) then (ya)
-
-      if (DetectedObject.isThreat == true?) then (ya)
-
-        if (ObjectType == PEDESTRIAN?) then (ya)
-          :set mode = EMERGENCY_STOP;
-          :Brake.emergencyBrake();
-          :displayAlert("Pejalan kaki terdeteksi!");
-          stop
-        elseif (ObjectType == VEHICLE?) then (ya)
-          :set mode = COLLISION_AVOIDANCE;
-          :Brake.apply();
-          :Car.turnLeft() atau turnRight();
-          :displayAlert("Kendaraan di depan!");
-        elseif (ObjectType == OBSTACLE?) then (ya)
-          :set mode = COLLISION_AVOIDANCE;
-          :Brake.apply();
-          :Car.turnLeft() atau turnRight();
-          :displayAlert("Rintangan terdeteksi!");
-        elseif (ObjectType == TRAFFIC_SIGN?) then (ya)
-          :Baca rambu;
-          :Sesuaikan kecepatan;
-        else (UNKNOWN)
-          :set mode = EMERGENCY_STOP;
-          :Brake.emergencyBrake();
-          :displayAlert("Objek tidak dikenal!");
-          stop
-        endif
-
-      else (tidak)
-        :Objek tidak berbahaya;
-        :Lanjut berkendara;
-      endif
-
-    else (distance > minSafeDistance)
-      :Jarak aman\nLanjut berkendara normal;
+  if (scanForObstacles?) then (ya)
+    if (frequentScan?) then (ya)
+      :ObjectDetector.readFrequentData();
+    else (tidak)
+      :ObjectDetector.readData();
     endif
-
+  else (tidak)
+    :Tidak melakukan scan pada update ini;
   endif
 
-repeat while (AutopilotSystem.isActive?) is (ya)
--> tidak;
+  if (Tidak ada obstacle di depan?) then (ya)
+    if (mode == COLLISION_AVOIDANCE?) then (ya)
+      :Car.driveStraight();
+      :mode = CRUISE_CONTROL;
+    endif
+    :applyCruiseControl();
+    :adjustGear(false);
+  else (ada obstacle)
+    :nearestObject = ObjectDetector.getNearestObject();
 
-:Deteksi objek selesai;
+    if (nearestObject.distance > minSafeDistance atau bukan threat?) then (aman)
+      :Objek diabaikan;
+      :applyCruiseControl();
+    else (mengancam)
+      if (ObjectType == PEDESTRIAN atau UNKNOWN?) then (urgent)
+        :mode = EMERGENCY_STOP;
+        :gradualEmergencyStop();
+        :AutopilotSystem.deactivate();
+        stop
+      elseif (ObjectType == VEHICLE atau OBSTACLE?) then (hindari)
+        :mode = COLLISION_AVOIDANCE;
+        :Car.turnLeft() atau Car.turnRight();
+        :Brake.apply();
+        :Engine.brake();
+        :SpeedSensor -= 10 KM/Jam;
+        :Manuver menghindari rintangan;
+      elseif (ObjectType == TRAFFIC_SIGN?) then (rambu)
+        :mode = CRUISE_CONTROL;
+        :Brake.apply();
+        :SpeedSensor -= 5 KM/Jam sementara;
+        note right
+          Target cruise tidak diubah.
+          Cruise hanya berubah dari input user
+          atau default 50 saat aktivasi.
+        end note
+      endif
+    endif
+  endif
+
+  if (Jalan sudah aman?) then (ya)
+    :Car.driveStraight();
+    :mode = CRUISE_CONTROL;
+    :Speed naik/turun bertahap menuju target cruise;
+  endif
+
+repeat while (autopilot aktif dan sesi simulasi belum selesai?) is (ya)
+->tidak;
+
+if (autopilot masih aktif?) then (ya)
+  :Car.driveStraight();
+  :mode = CRUISE_CONTROL;
+endif
+
 stop
 
 @enduml

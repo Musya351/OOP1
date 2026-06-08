@@ -1,0 +1,68 @@
+@startuml FuelTankPersistence
+
+skinparam ActivityBackgroundColor #FFFBEA
+skinparam ActivityBorderColor #D9A441
+skinparam ArrowColor #D9A441
+skinparam ActivityDiamondBackgroundColor #EEF8FF
+skinparam ActivityDiamondBorderColor #4A90D9
+
+start
+
+:Program simulator dijalankan;
+:Path fuelSavePath = "fuel-level.txt";
+
+if (fuel-level.txt ada?) then (ya)
+  :Baca isi file sebagai angka liter;
+  if (Isi file valid?) then (ya)
+    :FuelTank(currentLiters);
+    :Batasi nilai 0 sampai 40 liter;
+  else (tidak)
+    :Tampilkan pesan gagal membaca;
+    :FuelTank dibuat penuh 40 liter;
+  endif
+else (tidak)
+  :FuelTank dibuat penuh 40 liter;
+endif
+
+:Car dibuat dengan FuelTank;
+
+repeat
+  if (Mesin hidup dan speed > 0 dan BBM tersedia?) then (ya)
+    :Car.updateFuelUsage();
+    :Hitung elapsedSeconds;
+    :Konsumsi = elapsedSeconds / 10 liter;
+    :FuelTank.consume(konsumsi);
+
+    if (BBM habis?) then (ya)
+      :Brake.apply();
+      :Engine.brake();
+      :currentSpeed = 0;
+      :autopilotEnabled = false;
+      :gigi = 0;
+      :reverseMode = false;
+      note right
+        Mobil berhenti,
+        tetapi mesin tidak dimatikan.
+      end note
+    endif
+  else (tidak)
+    :Reset timer konsumsi bensin;
+  endif
+
+  if (User pilih Isi Bensin?) then (ya)
+    :Car.fillFuel();
+    :FuelTank.fillFull();
+    :currentLiters = 40;
+  endif
+
+  :FuelTank.save("fuel-level.txt");
+
+repeat while (program berjalan?) is (ya)
+->tidak;
+
+:Sebelum keluar, simpan liter terakhir;
+:FuelTank.save("fuel-level.txt");
+
+stop
+
+@enduml

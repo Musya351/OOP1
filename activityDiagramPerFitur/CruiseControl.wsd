@@ -8,42 +8,71 @@ skinparam ActivityDiamondBorderColor #D94A8C
 
 start
 
-:User input target speed;
-:AutopilotSystem.setCruiseSpeed(speed);
-:set targetSpeed = speed;
-:set mode = CRUISE_CONTROL;
+if (Autopilot baru diaktifkan?) then (ya)
+  :Car.enableAutopilot();
+  :AutopilotSystem.activate();
+  :targetSpeed = DEFAULT_CRUISE_SPEED 50 KM/Jam;
+  :SpeedSensor.setCurrentSpeed(Car.currentSpeed);
+  :ObjectDetector.initialize();
+  :SpeedSensor.initialize();
+  :mode = CRUISE_CONTROL;
+else (Set Cruise Control)
+  :User input target speed;
+  :AutopilotSystem.setCruiseSpeed(speed);
+  :mode = CRUISE_CONTROL;
+endif
 
 repeat
-
   :AutopilotSystem.update();
-  :SpeedSensor.getSpeed() → currentSpeed;
+  :scanForObstacles = shouldRunNormalDetection();
+  note right
+    Deteksi normal berjalan jarang
+    memakai NORMAL_DETECTION_CHANCE.
+  end note
+
+  :currentSpeed = SpeedSensor.readData();
+
+  if (scanForObstacles?) then (ya)
+    :ObjectDetector.readData();
+  endif
 
   if (SpeedSensor.isOverLimit()?) then (ya)
-    :Brake.apply();
-    :displayAlert("Kecepatan melebihi batas!");
+    :mode = EMERGENCY_STOP;
+    :gradualEmergencyStop();
+    :AutopilotSystem.deactivate();
     stop
   endif
 
-  :SpeedSensor.maintainSpeed(targetSpeed);
-
-  if (maintainSpeed == true?) then (ya)
-    :Kecepatan stabil\ntidak ada aksi;
-  elseif (currentSpeed < targetSpeed?) then (ya)
-    :Engine.accelerate();
-  else (currentSpeed > targetSpeed)
-    :Brake.apply();
+  if (mode == COLLISION_AVOIDANCE dan tidak scan?) then (ya)
+    :Car.driveStraight();
+    :mode = CRUISE_CONTROL;
   endif
 
-  if (ObjectDetector.isObstacleAhead()?) then (ya)
-    :set mode = COLLISION_AVOIDANCE;
+  if (mode == CRUISE_CONTROL?) then (ya)
+    if (currentSpeed == targetSpeed?) then (ya)
+      :Kecepatan stabil;
+    elseif (currentSpeed < targetSpeed?) then (ya)
+      :Engine.accelerate();
+      :SpeedSensor += 5 KM/Jam;
+    else (currentSpeed > targetSpeed)
+      :Brake.apply();
+      :SpeedSensor -= 5 KM/Jam;
+    endif
+  endif
+
+  if (scanForObstacles dan obstacle <= minSafeDistance?) then (ya)
     :handleObstacle();
-    stop
+  else (tidak)
+    :adjustGear(scanForObstacles);
   endif
 
-repeat while (mode == CRUISE_CONTROL?) is (ya)
--> tidak;
+  :Car.setCurrentSpeed(autopilot speed);
+  :FuelTank dikonsumsi saat mobil berjalan;
 
-:Cruise Control selesai;
+repeat while (autopilot.isActive()?) is (ya)
+->tidak;
+
+:Cruise control selesai atau autopilot nonaktif;
 stop
 
 @enduml

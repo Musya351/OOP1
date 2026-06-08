@@ -5,31 +5,53 @@ skinparam linetype ortho
 skinparam nodesep 60
 skinparam ranksep 50
 
+package "autopilotcar" #F7F7F7 {
+  class Main {
+    + {static} main(args : String[]) : void
+  }
+}
+
 package "model" #EAF2FF {
 
   class CarModel {
-    - title  : String
-    - brand  : String
+    - title : String
+    - brand : String
+    - cars : List<Car>
+    --
+    + getTitle() : String
+    + setTitle(title : String)
+    + getBrand() : String
+    + setBrand(brand : String)
+    + getCars() : List<Car>
+    + setCars(cars : List<Car>)
+    + toString() : String
   }
 
   class Car {
-    - registrationNum   : String
-    - year              : int
-    - licenseNumber     : String
-    - poweredOn         : boolean
-    - autopilotEnabled  : boolean
-    - currentSpeed      : float
-    - fuelTank          : FuelTank
-    - turnSignal        : String
-    - reverseMode       : boolean
+    - registrationNum : String
+    - year : int
+    - licenseNumber : String
+    - poweredOn : boolean
+    - autopilotEnabled : boolean
+    - currentSpeed : float
+    - fuelTank : FuelTank
+    - lastFuelUpdateMillis : long
+    - turnSignal : String
+    - reverseMode : boolean
+    - engine : Engine
+    - gearBox : GearBox
+    - body : Body
+    - suspensions : List<Suspension>
+    - brake : Brake
+    - wheels : Wheel[]
     --
     + turnOn() : boolean
     + turnOff() : boolean
     + fillFuel()
-    + updateFuelUsage() : boolean
-    + applyBrake()
     + moveForward()
     + moveBackward()
+    + applyBrake()
+    + applyBrake(speedReduction : float)
     + stop()
     + turnRight()
     + turnLeft()
@@ -39,137 +61,199 @@ package "model" #EAF2FF {
     + isReverseMode() : boolean
     + enableAutopilot()
     + disableAutopilot()
+    + updateFuelUsage() : boolean
     + getStatus() : String
+    + toString() : String
   }
 
   class Engine {
-    - capacity       : float
-    - numCylinders   : int
+    - capacity : float
+    - numCylinders : int
     --
     + start()
     + brake()
     + accelerate()
+    + toString() : String
   }
 
   class GearBox {
-    - gearRatio    : float[]
-    - currentGear  : int
+    - gearRatio : float[]
+    - currentGear : int
+    - gearBoxTypes : List<GearBoxType>
     --
     + shiftUp()
     + shiftDown()
     + autoShift(speed : float)
+    + toString() : String
   }
 
   class GearBoxType {
-    - name        : String
-    - remarks     : String
-    - isAutomatic : boolean
+    - name : String
+    - remarks : String
+    - automatic : boolean
+    --
+    + isAutomatic() : boolean
+    + toString() : String
   }
 
   class Body {
     - numberOfDoors : int
-    - color         : String
-    - frameType     : String
+    - color : String
+    - frameType : String
+    --
+    + toString() : String
   }
 
   class Suspension {
-    - springRate    : float
-    - dampingCoeff  : float
-    - type          : String
+    - springRate : float
+    - dampingCoeff : float
+    - type : String
+    --
+    + describeWheelDependency(wheel : Wheel) : String
+    + toString() : String
   }
 
   class Brake {
-    - type       : String
+    - type : String
     - brakeForce : float
     --
     + apply()
     + emergencyBrake()
+    + toString() : String
   }
 
   class Wheel {
-    - diameter  : float
-    - position  : String
-    - rpm       : float
+    - diameter : float
+    - position : String
+    - rpm : float
+    - tire : Tire
+    --
+    + getTire() : Tire
+    + setTire(tire : Tire)
+    + toString() : String
   }
 
   class Tire {
-    - width       : float
+    - width : float
     - airPressure : float
-    - treadDepth  : float
+    - treadDepth : float
+    --
+    + getAirPressure() : float
+    + setAirPressure(airPressure : float)
+    + toString() : String
   }
 
   class FuelTank {
+    + {static} CAPACITY_LITERS : float
     - currentLiters : float
     --
     + getCapacityLiters() : float
-    + getCurrentLiters()  : float
+    + getCurrentLiters() : float
+    + setCurrentLiters(currentLiters : float)
     + getFuelPercentage() : float
+    + isEmpty() : boolean
     + fillFull()
     + consume(liters : float) : boolean
     + save(path : Path)
     + {static} load(path : Path) : FuelTank
+    + toString() : String
   }
 }
 
 package "autopilot" #F0EEFF {
 
   class AutopilotSystem {
-    - isActive          : boolean
-    - targetSpeed       : float
-    - minSafeDistance   : float
-    - mode              : AutopilotMode
-    - car               : Car
+    - {static} DEFAULT_CRUISE_SPEED : float
+    - {static} EMERGENCY_DECELERATION_STEP : float
+    - {static} NORMAL_DETECTION_CHANCE : float
+    - {static} SIMULATION_MIN_DURATION_MS : int
+    - {static} SIMULATION_MAX_EXTRA_DURATION_MS : int
+    - active : boolean
+    - targetSpeed : float
+    - minSafeDistance : float
+    - mode : AutopilotMode
+    - objectDetector : ObjectDetector
+    - speedSensor : SpeedSensor
+    - gearBox : GearBox
+    - brake : Brake
+    - engine : Engine
+    - car : Car
+    - random : Random
     --
+    + isActive() : boolean
+    + getTargetSpeed() : float
+    + setTargetSpeed(targetSpeed : float)
+    + getMinSafeDistance() : float
+    + setMinSafeDistance(minSafeDistance : float)
+    + getMode() : AutopilotMode
+    + getCurrentSpeed() : float
     + activate()
     + deactivate()
     + update()
     + simulateObjectDetection()
     + handleObstacle()
     + adjustGear()
-    + getStatusReport() : String
     + setCruiseSpeed(speed : float)
+    + getStatusReport() : String
   }
 
   interface Sensor {
     + initialize()
     + readData() : Object
-    + isReady()  : boolean
+    + isReady() : boolean
   }
 
   class ObjectDetector {
+    - {static} DETECTABLE_TYPES : ObjectType[]
+    - random : Random
     - detectionRange : float
-    - sensitivity    : float
+    - sensitivity : float
+    - detectedObjects : List<DetectedObject>
+    - ready : boolean
     --
-    + scan()             : List
-    + scanFrequent()     : List
+    + getDetectedObjects() : List<DetectedObject>
+    + scan()
+    + scanFrequent()
     + getNearestObject() : DetectedObject
-    + isObstacleAhead()  : boolean
-    + getDistance()      : float
+    + isObstacleAhead() : boolean
+    + getDistance() : float
     + initialize()
-    + readData()         : Object
+    + readData() : Object
     + readFrequentData() : Object
-    + isReady()          : boolean
+    + isReady() : boolean
   }
 
   class SpeedSensor {
-    - currentSpeed  : float
-    - maxSpeed      : float
-    - speedHistory  : float[]
+    - currentSpeed : float
+    - maxSpeed : float
+    - speedHistory : float[]
+    - ready : boolean
     --
-    + getSpeed()       : float
-    + isOverLimit()    : boolean
+    + getCurrentSpeed() : float
+    + setCurrentSpeed(currentSpeed : float)
+    + getMaxSpeed() : float
+    + setMaxSpeed(maxSpeed : float)
+    + getSpeedHistory() : float[]
+    + getSpeed() : float
+    + isOverLimit() : boolean
     + getOptimalGear() : int
-    + initialize()
-    + readData()       : Object
-    + isReady()        : boolean
     + maintainSpeed(target : float) : boolean
+    + initialize()
+    + readData() : Object
+    + isReady() : boolean
   }
 
   class DetectedObject {
-    - objectId      : String
-    - distance      : float
+    - objectId : String
+    - distance : float
     - relativeSpeed : float
-    - isThreat      : boolean
+    - threat : boolean
+    - objectType : ObjectType
+    --
+    + isThreat() : boolean
+    + getObjectType() : ObjectType
+    + getDistance() : float
+    + toString() : String
   }
 
   enum AutopilotMode {
@@ -193,22 +277,41 @@ package "ui" #FFF0F5 {
 
   class ConsoleUI {
     - scanner : Scanner
+    - car : Car
+    - autopilot : AutopilotSystem
+    - fuelSavePath : Path
     --
     + displayMenu()
+    + processInput() : boolean
     + displayStatus()
-    + processInput()
     + displayAlert(msg : String)
     + run()
   }
 
   class CarSimulator {
-    + {static} main(args : String[]) : void
-    + initializeCar()   : Car
-    + setupAutopilot()
+    - car : Car
+    - autopilot : AutopilotSystem
+    --
+    + initializeCar() : Car
+    + setupAutopilot() : AutopilotSystem
     + startSimulation()
+    + {static} main(args : String[]) : void
   }
 
   class DashboardGUI {
+    - {static} DASHBOARD_REFRESH_MS : int
+    - {static} AUTOPILOT_UPDATE_MS : int
+    - car : Car
+    - autopilot : AutopilotSystem
+    - fuelSavePath : Path
+    - dashboardTimer : Timer
+    - emergencyStopTimer : Timer
+    - autopilotElapsedMillis : int
+    - currentInputState : String
+    - inputPanel : JPanel
+    - logArea : JTextArea
+    --
+    + DashboardGUI(car : Car, autopilot : AutopilotSystem)
     + {static} show(car : Car, autopilot : AutopilotSystem)
   }
 
@@ -219,34 +322,37 @@ package "ui" #FFF0F5 {
 
 ' === RELASI MODEL ===
 CarModel "1" o-- "0..*" Car
-Car "1" *-- "1"    Engine
-Car "1" *-- "1"    GearBox
-Car "1" *-- "1"    Body
+Car "1" *-- "1" Engine
+Car "1" *-- "1" GearBox
+Car "1" *-- "1" Body
 Car "1" *-- "1..*" Suspension
-Car "1" *-- "1"    Brake
-Car "1" *-- "4"    Wheel
-Car "1" *-- "1"    FuelTank
-GearBox    "1" o-- "0..*" GearBoxType
-Wheel      "1" *-- "1"    Tire
-Suspension      --> Wheel
+Car "1" *-- "1" Brake
+Car "1" *-- "4" Wheel
+Car "1" *-- "1" FuelTank
+GearBox "1" o-- "0..*" GearBoxType
+Wheel "1" *-- "1" Tire
+Suspension --> Wheel
 
 ' === RELASI AUTOPILOT ===
-Car            "1" --> "1" AutopilotSystem
-AutopilotSystem "1" *-- "1" ObjectDetector
-AutopilotSystem "1" *-- "1" SpeedSensor
-AutopilotSystem     -->      AutopilotMode
-AutopilotSystem     -->      GearBox
-AutopilotSystem     -->      Brake
-ObjectDetector  ..|> Sensor
-SpeedSensor     ..|> Sensor
-ObjectDetector "1" --> "0..*" DetectedObject
-DetectedObject      -->       ObjectType
+AutopilotSystem --> ObjectDetector
+AutopilotSystem --> SpeedSensor
+AutopilotSystem --> AutopilotMode
+AutopilotSystem --> GearBox
+AutopilotSystem --> Brake
 AutopilotSystem --> Engine
+AutopilotSystem --> Car
+ObjectDetector ..|> Sensor
+SpeedSensor ..|> Sensor
+ObjectDetector "1" --> "0..*" DetectedObject
+DetectedObject --> ObjectType
 
 ' === RELASI UI ===
-ConsoleUI   --> Car
+Main --> CarSimulator
+ConsoleUI --> Car
+ConsoleUI --> AutopilotSystem
 CarSimulator --> ConsoleUI
 CarSimulator --> Car
+CarSimulator --> AutopilotSystem
 DashboardGUI --> Car
 DashboardGUI --> AutopilotSystem
 GuiCarSimulator --> CarSimulator

@@ -1,0 +1,100 @@
+@startuml StateDiagramAutopilotCar
+
+skinparam state {
+  BackgroundColor #EEF8FF
+  BorderColor #4A90D9
+  ArrowColor #4A90D9
+}
+
+[*] --> ProgramMulai
+
+ProgramMulai --> MesinMati : FuelTank.load("fuel-level.txt")
+
+state MesinMati {
+  [*] --> MenuAwal
+  MenuAwal : Button/input tersedia
+  MenuAwal : Hidupkan Mesin
+  MenuAwal : Isi Bensin
+  MenuAwal : Keluar
+}
+
+MesinMati --> MesinHidup : Hidupkan Mesin\nBBM tersedia
+MesinMati --> MesinMati : Isi Bensin\nFuelTank = 40 L
+MesinMati --> ProgramKeluar : Keluar\nsave fuel
+
+state MesinHidup {
+  [*] --> ManualDriving
+
+  state ManualDriving {
+    [*] --> Diam
+    Diam --> Maju : Tambah Kecepatan
+    Maju --> Maju : Tambah Kecepatan\nspeed +10
+    Maju --> Diam : Rem sampai 0\natau Emergency Stop Manual
+
+    Diam --> ReverseMode : Mundur (Gigi R)
+    ReverseMode --> ReverseMode : Tambah Kecepatan\nspeed mundur +5
+    ReverseMode --> Diam : Rem sampai 0
+
+    Maju --> Maju : Belok Kiri\nlampu sen Kiri
+    Maju --> Maju : Belok Kanan\nlampu sen Kanan
+    Maju --> Maju : Lurus\nlampu sen Mati
+    ReverseMode --> ReverseMode : Belok/Lurus\nupdate lampu sen
+  }
+}
+
+MesinHidup --> MesinMati : Matikan Mesin\ncurrentSpeed == 0
+MesinHidup --> MesinHidup : Matikan Mesin ditolak\ncurrentSpeed > 0
+MesinHidup --> MesinHidup : Isi Bensin\nFuelTank = 40 L
+
+MesinHidup --> AutopilotAktif : Aktifkan Autopilot\nBBM tersedia
+
+state AutopilotAktif {
+  [*] --> CruiseControl
+
+  CruiseControl : targetSpeed default 50 KM/Jam
+  CruiseControl : speed naik/turun bertahap 5 KM/Jam
+  CruiseControl : deteksi normal jarang
+
+  CruiseControl --> CruiseControl : Set Cruise Control\ninput user
+  CruiseControl --> SimulasiDeteksiObjek : Simulasi Deteksi Objek
+  SimulasiDeteksiObjek : scanFrequent()
+  SimulasiDeteksiObjek : berjalan 5 sampai 10 detik
+  SimulasiDeteksiObjek --> CruiseControl : sesi selesai\njalan aman
+
+  CruiseControl --> CollisionAvoidance : VEHICLE/OBSTACLE\nnon-urgent
+  SimulasiDeteksiObjek --> CollisionAvoidance : VEHICLE/OBSTACLE\nnon-urgent
+
+  CollisionAvoidance : kurangi speed sementara
+  CollisionAvoidance : lampu sen Kiri/Kanan
+  CollisionAvoidance --> CruiseControl : obstacle terlewati\nlampu sen Mati
+
+  CruiseControl --> EmergencyStop : PEDESTRIAN/UNKNOWN\natau over limit
+  SimulasiDeteksiObjek --> EmergencyStop : PEDESTRIAN/UNKNOWN
+  CollisionAvoidance --> EmergencyStop : kondisi urgent
+
+  EmergencyStop : speed turun 5 KM/Jam per detik
+  EmergencyStop : berhenti total
+}
+
+AutopilotAktif --> MesinHidup : Nonaktifkan Autopilot
+AutopilotAktif --> MesinHidup : Emergency Stop Manual\nspeed turun sampai 0
+AutopilotAktif --> MesinHidup : EmergencyStop selesai\nautopilot deactivate
+
+MesinHidup --> BbmHabis : updateFuelUsage()\nFuelTank kosong
+AutopilotAktif --> BbmHabis : updateFuelUsage()\nFuelTank kosong
+
+state BbmHabis {
+  [*] --> MobilBerhenti
+  MobilBerhenti : currentSpeed = 0
+  MobilBerhenti : gear = 0
+  MobilBerhenti : reverseMode = false
+  MobilBerhenti : autopilot nonaktif
+  MobilBerhenti : mesin tetap hidup
+}
+
+BbmHabis --> MesinHidup : Isi Bensin\nFuelTank = 40 L
+
+ProgramKeluar : FuelTank.save("fuel-level.txt")
+ProgramKeluar --> [*]
+
+@enduml

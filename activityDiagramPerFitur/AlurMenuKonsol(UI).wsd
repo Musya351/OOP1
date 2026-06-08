@@ -1,4 +1,4 @@
-@startuml AlurMenuKonsol
+@startuml AlurMenuKonsolDanGUI
 
 skinparam ActivityBackgroundColor #EAF2FF
 skinparam ActivityBorderColor #4A90D9
@@ -8,43 +8,137 @@ skinparam ActivityDiamondBorderColor #D94A8C
 
 start
 
-:CarSimulator.main();
-:initializeCar();
-:setupAutopilot();
-:ConsoleUI.run();
+:CarSimulator.main() atau GuiCarSimulator.main();
+:FuelTank.load("fuel-level.txt");
+:initializeCar(fuelTank);
+:setupAutopilot(car);
+
+if (Mode UI?) then (Console)
+  :ConsoleUI.run();
+else (GUI)
+  :DashboardGUI.show(car, autopilot);
+  :Start Swing dashboard timer;
+endif
 
 repeat
-  :displayMenu();
-  note right
-    [1] Status Mobil
-    [2] Aktifkan Autopilot
-    [3] Cruise Control
-    [4] Matikan Autopilot
-    [5] Keluar
-  end note
+  :updateCarFuelState();
+  :FuelTank.save("fuel-level.txt");
 
-  :processInput();
+  if (autopilot.isActive()?) then (ya)
+    :Tampilkan menu autopilot aktif;
+    note right
+      [1] Set Cruise Control
+      [2] Simulasi Deteksi Objek
+      [3] Emergency Stop Manual
+      [4] Nonaktifkan Autopilot
+    end note
 
-  if (input == 1?) then (ya)
-    :Car.getStatus();
-    :displayStatus();
-  elseif (input == 2?) then (ya)
-    :Car.enableAutopilot();
-    :AutopilotSystem.activate();
-    :displayAlert("Autopilot Aktif");
-  elseif (input == 3?) then (ya)
-    :Input target speed;
-    :AutopilotSystem.setCruiseSpeed(speed);
-    :displayAlert("Cruise Control Aktif");
-  elseif (input == 4?) then (ya)
-    :Car.disableAutopilot();
-    :AutopilotSystem.deactivate();
-    :displayAlert("Autopilot Nonaktif");
-  elseif (input == 5?) then (ya)
-    :displayAlert("Keluar...");
-    stop
-  else (tidak valid)
-    :displayAlert("Input tidak valid");
+    if (Pilih Set Cruise Control?) then (ya)
+      :Input target speed;
+      :AutopilotSystem.setCruiseSpeed(speed);
+      :AutopilotSystem.update();
+      :Car.setCurrentSpeed(autopilot speed);
+    elseif (Pilih Simulasi Deteksi Objek?) then (ya)
+      :AutopilotSystem.simulateObjectDetection();
+      :Car.setCurrentSpeed(autopilot speed);
+    elseif (Pilih Emergency Stop Manual?) then (ya)
+      :Car.disableAutopilot();
+      :AutopilotSystem.deactivate();
+      :Kurangi speed 5 KM/Jam per detik;
+      :Car.stop();
+    elseif (Pilih Nonaktifkan Autopilot?) then (ya)
+      :Car.disableAutopilot();
+      :AutopilotSystem.deactivate();
+    else (tidak valid)
+      :Tampilkan pesan input tidak valid;
+    endif
+
+  elseif (car.isPoweredOn()?) then (ya)
+    :Tampilkan menu mesin hidup;
+    note right
+      Console:
+      [1] Matikan Mesin
+      [2] Status Mobil
+      [3] Aktifkan Autopilot
+      [4] Isi Bensin
+
+      GUI:
+      Matikan Mesin, Status Mobil,
+      Tambah Kecepatan, Rem,
+      Belok Kiri, Belok Kanan,
+      Lurus, Mundur (Gigi R),
+      Aktifkan Autopilot
+    end note
+
+    if (Matikan Mesin?) then (ya)
+      if (currentSpeed == 0?) then (ya)
+        :Car.turnOff();
+        :AutopilotSystem.deactivate();
+      else (tidak)
+        :Tampilkan pesan mobil harus berhenti;
+      endif
+    elseif (Status Mobil?) then (ya)
+      :Tampilkan status Car dan AutopilotSystem;
+    elseif (Tambah Kecepatan?) then (GUI)
+      :Car.moveForward();
+      note right
+        Jika reverseMode aktif,
+        speed mundur bertambah
+        dan gigi tetap R.
+      end note
+    elseif (Rem?) then (GUI)
+      :Car.applyBrake();
+    elseif (Belok Kiri?) then (GUI)
+      :Car.turnLeft();
+    elseif (Belok Kanan?) then (GUI)
+      :Car.turnRight();
+    elseif (Lurus?) then (GUI)
+      :Car.driveStraight();
+    elseif (Mundur Gigi R?) then (GUI)
+      if (currentSpeed == 0?) then (ya)
+        :Car.moveBackward();
+      else (tidak)
+        :Tolak pindah ke R;
+      endif
+    elseif (Aktifkan Autopilot?) then (ya)
+      if (FuelTank kosong?) then (ya)
+        :Tampilkan pesan isi bensin dulu;
+      else (tidak)
+        :Car.enableAutopilot();
+        :AutopilotSystem.activate();
+        :AutopilotSystem.update();
+        :Car.setCurrentSpeed(autopilot speed);
+      endif
+    elseif (Isi Bensin?) then (Console)
+      :Car.fillFuel();
+      :FuelTank.save("fuel-level.txt");
+    else (tidak valid)
+      :Tampilkan pesan input tidak valid;
+    endif
+
+  else (mesin mati)
+    :Tampilkan menu awal;
+    note right
+      [1] Hidupkan Mesin
+      [2] Isi Bensin
+      [3] Keluar
+    end note
+
+    if (Hidupkan Mesin?) then (ya)
+      if (FuelTank kosong?) then (ya)
+        :Tampilkan pesan isi bensin dulu;
+      else (tidak)
+        :Car.turnOn();
+      endif
+    elseif (Isi Bensin?) then (ya)
+      :Car.fillFuel();
+      :FuelTank.save("fuel-level.txt");
+    elseif (Keluar?) then (ya)
+      :FuelTank.save("fuel-level.txt");
+      stop
+    else (tidak valid)
+      :Tampilkan pesan input tidak valid;
+    endif
   endif
 
 repeat while (program berjalan?) is (ya)
